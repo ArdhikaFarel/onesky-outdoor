@@ -1,0 +1,6 @@
+{
+  "name": "OneSky Outdoor",
+  "description": "Sewa Peralatan Camping & Outdoor Berkualitas - Praktis, Aman, dan Terjangkau.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
