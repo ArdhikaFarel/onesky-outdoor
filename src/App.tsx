@@ -551,6 +551,11 @@ export default function App() {
   }, [homepageConfig, isMigrationDone, triggerToast]);
 
   // ==========================================
+  // HITUNG TOTAL CART - PINDAHKAN KE SINI (SEBELUM renderPageContent)
+  // ==========================================
+  const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
+
+  // ==========================================
   // PAGINATION ROUTER SWITCH
   // ==========================================
   const renderPageContent = useCallback(() => {
@@ -703,10 +708,9 @@ export default function App() {
     handleAdminLoginSuccess,
     handleAdminLogout,
     triggerToast,
-    isMigrationDone
+    isMigrationDone,
+    setIsCartOpen
   ]);
-
-  const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   // Loading state
   if (isInitialLoad && !isMigrationDone) {
