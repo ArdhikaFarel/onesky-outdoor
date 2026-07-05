@@ -1,5 +1,6 @@
 // =============================================
 // FIRESTORE SERVICE - FINAL VERSION
+// TANPA CIRCULAR DEPENDENCY
 // =============================================
 
 import { 
@@ -18,7 +19,6 @@ import {
   Query,
   QuerySnapshot,
   writeBatch,
-  DocumentData,
   FirestoreError
 } from 'firebase/firestore';
 import { db } from './config';
@@ -104,7 +104,7 @@ export const firestoreService = {
   },
 
   // ---- UPDATE SPECIFIC FIELDS ----
-  async update(collectionName: string, id: string, data: Partial<any>): Promise<void> {
+  async update(collectionName: string, id: string, data: Record<string, any>): Promise<void> {
     try {
       const docRef = doc(db, collectionName, id);
       await updateDoc(docRef, data);
@@ -173,6 +173,27 @@ export const firestoreService = {
   ): Promise<T[]> {
     try {
       const q = query(collection(db, collectionName), where(field, '==', value));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as T[];
+    } catch (error) {
+      console.error(`❌ Error querying ${collectionName}:`, error);
+      throw error;
+    }
+  },
+
+  // ---- QUERY WITH MULTIPLE CONDITIONS ----
+  async queryByFields<T>(
+    collectionName: string,
+    conditions: { field: string; value: any }[]
+  ): Promise<T[]> {
+    try {
+      let q = collection(db, collectionName);
+      for (const cond of conditions) {
+        q = query(q, where(cond.field, '==', cond.value));
+      }
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -269,6 +290,43 @@ export const firestoreService = {
       console.error(`❌ Error counting ${collectionName}:`, error);
       return 0;
     }
+  },
+
+  // ---- GET DOCUMENTS WITH PAGINATION ----
+  async getPaginated<T>(
+    collectionName: string,
+    limitCount: number,
+    startAfter?: any
+  ): Promise<{ items: T[]; lastDoc: any }> {
+    try {
+      let q = query(collection(db, collectionName), limit(limitCount));
+      if (startAfter) {
+        q = query(q, startAfter(startAfter));
+      }
+      const querySnapshot = await getDocs(q);
+      const items = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as T[];
+      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+      return { items, lastDoc };
+    } catch (error) {
+      console.error(`❌ Error getting paginated data:`, error);
+      throw error;
+    }
+  },
+
+  // ---- TRANSACTION OPERATION ----
+  async runTransaction<T>(
+    transactionFn: (transaction: any) => Promise<T>
+  ): Promise<T> {
+    try {
+      const result = await transactionFn(db);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in transaction:', error);
+      throw error;
+    }
   }
 };
 
@@ -302,10 +360,19 @@ export const packageService = {
   queryByStatus: (status: ItemStatus) => 
     firestoreService.queryByField<RentalPackage>(COLLECTIONS.PACKAGES, 'status', status),
   
+  queryByStatusAndPrice: (status: ItemStatus, maxPrice: number) =>
+    firestoreService.queryByFields<RentalPackage>(COLLECTIONS.PACKAGES, [
+      { field: 'status', value: status },
+      { field: 'price', value: maxPrice }
+    ]),
+  
   bulkWrite: (packages: RentalPackage[]) => 
     firestoreService.bulkWrite(COLLECTIONS.PACKAGES, packages),
   
-  count: () => firestoreService.count(COLLECTIONS.PACKAGES)
+  count: () => firestoreService.count(COLLECTIONS.PACKAGES),
+  
+  getPaginated: (limitCount: number, startAfter?: any) =>
+    firestoreService.getPaginated<RentalPackage>(COLLECTIONS.PACKAGES, limitCount, startAfter)
 };
 
 // =============================================
@@ -326,6 +393,9 @@ export const unitPriceService = {
   updatePrice: (id: string, price: number) =>
     firestoreService.update(COLLECTIONS.UNIT_PRICES, id, { price }),
   
+  updateName: (id: string, name: string) =>
+    firestoreService.update(COLLECTIONS.UNIT_PRICES, id, { name }),
+  
   subscribe: (callback: (data: UnitPriceItem[]) => void) => 
     firestoreService.subscribeToCollection<UnitPriceItem>(
       COLLECTIONS.UNIT_PRICES, 
@@ -336,7 +406,10 @@ export const unitPriceService = {
   bulkWrite: (items: UnitPriceItem[]) => 
     firestoreService.bulkWrite(COLLECTIONS.UNIT_PRICES, items),
   
-  count: () => firestoreService.count(COLLECTIONS.UNIT_PRICES)
+  count: () => firestoreService.count(COLLECTIONS.UNIT_PRICES),
+  
+  getPaginated: (limitCount: number, startAfter?: any) =>
+    firestoreService.getPaginated<UnitPriceItem>(COLLECTIONS.UNIT_PRICES, limitCount, startAfter)
 };
 
 // =============================================
@@ -391,11 +464,17 @@ export const reviewService = {
   toggleHidden: (id: string, hidden: boolean) => 
     firestoreService.update(COLLECTIONS.REVIEWS, id, { hidden }),
   
+  updateRating: (id: string, rating: number) =>
+    firestoreService.update(COLLECTIONS.REVIEWS, id, { rating }),
+  
   getVisibleReviews: () => 
     firestoreService.queryByField<ReviewItem>(COLLECTIONS.REVIEWS, 'hidden', false),
   
   getHiddenReviews: () => 
     firestoreService.queryByField<ReviewItem>(COLLECTIONS.REVIEWS, 'hidden', true),
+  
+  getReviewsByRating: (rating: number) =>
+    firestoreService.queryByField<ReviewItem>(COLLECTIONS.REVIEWS, 'rating', rating),
   
   subscribe: (callback: (data: ReviewItem[]) => void) => 
     firestoreService.subscribeToCollection<ReviewItem>(COLLECTIONS.REVIEWS, callback),
@@ -410,7 +489,11 @@ export const reviewService = {
   bulkWrite: (items: ReviewItem[]) => 
     firestoreService.bulkWrite(COLLECTIONS.REVIEWS, items),
   
-  count: () => firestoreService.count(COLLECTIONS.REVIEWS)
+  count: () => firestoreService.count(COLLECTIONS.REVIEWS),
+  
+  countVisible: () => 
+    firestoreService.queryByField<ReviewItem>(COLLECTIONS.REVIEWS, 'hidden', false)
+      .then(data => data.length)
 };
 
 // =============================================
@@ -430,6 +513,12 @@ export const documentationService = {
   
   updateCaption: (id: string, caption: string) =>
     firestoreService.update(COLLECTIONS.DOCUMENTATION, id, { caption }),
+  
+  getByDateRange: (startDate: string, endDate: string) =>
+    firestoreService.queryByFields<DocumentationItem>(COLLECTIONS.DOCUMENTATION, [
+      { field: 'date', value: startDate },
+      { field: 'date', value: endDate }
+    ]),
   
   subscribe: (callback: (data: DocumentationItem[]) => void) => 
     firestoreService.subscribeToCollection<DocumentationItem>(COLLECTIONS.DOCUMENTATION, callback),
@@ -458,6 +547,15 @@ export const settingsService = {
   
   updateSecondaryColor: (color: string) =>
     firestoreService.update(COLLECTIONS.SETTINGS, 'main', { secondaryColor: color }),
+  
+  updateContactNumber: (number: string) =>
+    firestoreService.update(COLLECTIONS.SETTINGS, 'main', { contactNumber: number }),
+  
+  updateWhatsappNumber: (number: string) =>
+    firestoreService.update(COLLECTIONS.SETTINGS, 'main', { whatsappNumber: number }),
+  
+  updateFooterText: (text: string) =>
+    firestoreService.update(COLLECTIONS.SETTINGS, 'main', { footerText: text }),
   
   subscribe: (callback: (data: SystemSettings) => void) => {
     return firestoreService.subscribeToDocument<SystemSettings>(
@@ -492,6 +590,15 @@ export const homepageService = {
       heroBgUrl
     }),
   
+  updateHeroTitle: (title: string) =>
+    firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', { heroTitle: title }),
+  
+  updateHeroSubtitle: (subtitle: string) =>
+    firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', { heroSubtitle: subtitle }),
+  
+  updateHeroBg: (bgUrl: string) =>
+    firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', { heroBgUrl: bgUrl }),
+  
   updateStatusColors: (readyColor: string, disewaColor: string, tidakTersediaColor: string) =>
     firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', {
       statusColors: {
@@ -501,8 +608,27 @@ export const homepageService = {
       }
     }),
   
+  updateReadyColor: (color: string) =>
+    firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', {
+      statusColors: {
+        ...(firestoreService.getById<HomepageConfig>(COLLECTIONS.HOMEPAGE, 'main') as any)?.statusColors,
+        readyColor: color
+      }
+    }),
+  
   updateFeatures: (features: HomepageConfig['features']) =>
     firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', { features }),
+  
+  updateFeature: (featureId: string, updates: { title?: string; description?: string }) =>
+    firestoreService.getById<HomepageConfig>(COLLECTIONS.HOMEPAGE, 'main')
+      .then(config => {
+        if (config) {
+          const updatedFeatures = config.features.map(f => 
+            f.id === featureId ? { ...f, ...updates } : f
+          );
+          return firestoreService.update(COLLECTIONS.HOMEPAGE, 'main', { features: updatedFeatures });
+        }
+      }),
   
   subscribe: (callback: (data: HomepageConfig) => void) => {
     return firestoreService.subscribeToDocument<HomepageConfig>(
@@ -551,19 +677,19 @@ export const exportAllData = async () => {
 
 export const importAllData = async (data: any) => {
   try {
-    if (data.packages) {
+    if (data.packages && data.packages.length > 0) {
       await packageService.bulkWrite(data.packages);
     }
-    if (data.unitPrices) {
+    if (data.unitPrices && data.unitPrices.length > 0) {
       await unitPriceService.bulkWrite(data.unitPrices);
     }
-    if (data.terms) {
+    if (data.terms && data.terms.length > 0) {
       await termService.bulkWrite(data.terms);
     }
-    if (data.reviews) {
+    if (data.reviews && data.reviews.length > 0) {
       await reviewService.bulkWrite(data.reviews);
     }
-    if (data.documentation) {
+    if (data.documentation && data.documentation.length > 0) {
       await documentationService.bulkWrite(data.documentation);
     }
     if (data.settings) {
@@ -573,6 +699,7 @@ export const importAllData = async (data: any) => {
       await homepageService.save(data.homepage);
     }
     console.log('✅ Data imported successfully');
+    return true;
   } catch (error) {
     console.error('❌ Error importing data:', error);
     throw error;
@@ -587,20 +714,47 @@ export const resetDatabase = async () => {
   try {
     console.warn('⚠️ Resetting entire database...');
     
+    const [packages, unitPrices, terms, reviews, docs] = await Promise.all([
+      packageService.getAll(),
+      unitPriceService.getAll(),
+      termService.getAll(),
+      reviewService.getAll(),
+      documentationService.getAll()
+    ]);
+    
     await Promise.all([
-      firestoreService.bulkDelete(COLLECTIONS.PACKAGES, (await packageService.getAll()).map(p => p.id)),
-      firestoreService.bulkDelete(COLLECTIONS.UNIT_PRICES, (await unitPriceService.getAll()).map(p => p.id)),
-      firestoreService.bulkDelete(COLLECTIONS.TERMS, (await termService.getAll()).map(p => p.id)),
-      firestoreService.bulkDelete(COLLECTIONS.REVIEWS, (await reviewService.getAll()).map(p => p.id)),
-      firestoreService.bulkDelete(COLLECTIONS.DOCUMENTATION, (await documentationService.getAll()).map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.PACKAGES, packages.map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.UNIT_PRICES, unitPrices.map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.TERMS, terms.map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.REVIEWS, reviews.map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.DOCUMENTATION, docs.map(p => p.id)),
       firestoreService.delete(COLLECTIONS.SETTINGS, 'main'),
       firestoreService.delete(COLLECTIONS.HOMEPAGE, 'main')
     ]);
     
     console.log('✅ Database reset successfully');
+    return true;
   } catch (error) {
     console.error('❌ Error resetting database:', error);
     throw error;
+  }
+};
+
+// =============================================
+// HEALTH CHECK
+// =============================================
+
+export const checkFirestoreHealth = async (): Promise<boolean> => {
+  try {
+    const testCollection = collection(db, '_health_check');
+    const testDoc = doc(testCollection, 'test');
+    await setDoc(testDoc, { timestamp: new Date().toISOString() }, { merge: true });
+    await deleteDoc(testDoc);
+    console.log('✅ Firestore health check passed');
+    return true;
+  } catch (error) {
+    console.error('❌ Firestore health check failed:', error);
+    return false;
   }
 };
 
