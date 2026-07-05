@@ -40,7 +40,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
 // ==========================================
-// FIREBASE IMPORTS - HANYA DARI CONFIG
+// FIREBASE IMPORTS - DARI SERVICES INDEX
 // ==========================================
 import { 
   packageService, 
@@ -49,15 +49,10 @@ import {
   reviewService, 
   documentationService,
   settingsService,
-  homepageService,
-  exportAllData,
-  importAllData,
-  resetDatabase,
-  checkFirestoreHealth
-} from './firebase/config';
+  homepageService
+} from './firebase/services';
 import { auth } from './firebase/config';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-
 // ==========================================
 // MIGRATION HELPER
 // ==========================================
