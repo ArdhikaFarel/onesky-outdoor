@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Sparkles, CheckCircle2, ChevronRight, Mountain, Star, Shield, ArrowRight, Search, ShoppingCart } from 'lucide-react';
 import { HomepageConfig, SystemSettings } from '../types';
 import { motion } from 'motion/react';
@@ -20,6 +20,17 @@ export default function Home({
   onCartToggle, 
   isAdminLoggedIn 
 }: HomeProps) {
+  // ==========================================
+  // STATE UNTUK SYNC DENGAN HOMEPAGE CONFIG
+  // ==========================================
+  const [currentConfig, setCurrentConfig] = useState(homepageConfig);
+
+  // Update state ketika homepageConfig berubah dari props (Firestore real-time)
+  useEffect(() => {
+    console.log('🏠 Homepage config updated:', homepageConfig);
+    setCurrentConfig(homepageConfig);
+  }, [homepageConfig]);
+
   // Convert color to standard style
   const getStatusColorStyle = (hexColor: string) => {
     return {
@@ -36,6 +47,15 @@ export default function Home({
     };
   };
 
+  // ==========================================
+  // HERO BANNER BACKGROUND IMAGE
+  // ==========================================
+  const heroBgImage = currentConfig.heroBgUrl || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1920&q=85';
+  
+  // Hero Title & Subtitle dengan fallback
+  const heroTitle = currentConfig.heroTitle || 'Adventure';
+  const heroSubtitle = currentConfig.heroSubtitle || 'Rent premium camping, hiking, and outdoor equipment for unforgettable adventures. Clean, complete, and ready for every journey.';
+
   return (
     <div className="space-y-24 pb-24 bg-[#faf9f6] dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 transition-colors duration-300 overflow-hidden" id="home-page">
       
@@ -43,12 +63,12 @@ export default function Home({
       <div className="absolute top-[110vh] left-1/4 w-[500px] h-[500px] bg-emerald-500/5 dark:bg-emerald-500/2 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-[150vh] right-10 w-[400px] h-[400px] bg-amber-500/5 dark:bg-amber-500/2 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      {/* ================= PREMIUM 100VH HERO SECTION (Bloomm / Everleaf Luxury Aesthetic) ================= */}
+      {/* ================= PREMIUM 100VH HERO SECTION ================= */}
       <div className="w-full min-h-screen p-4 sm:p-6 bg-[#faf9f6] dark:bg-zinc-950 flex flex-col justify-between" id="home-hero-section-wrapper">
         <section 
           className="relative h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] w-full rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden flex flex-col justify-between p-6 sm:p-12 text-white shadow-2xl bg-cover bg-center bg-no-repeat"
           style={{ 
-            backgroundImage: `url('https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1920&q=85')` 
+            backgroundImage: `url('${heroBgImage}')` 
           }}
           id="home-hero-section"
         >
@@ -177,9 +197,12 @@ export default function Home({
             </div>
           </nav>
 
-          {/* 2. Immersive Main Hero Typography Content */}
+          {/* ==========================================
+              2. Immersive Main Hero Typography Content
+              ========================================== */}
           <div className="relative z-10 my-auto text-left space-y-4 max-w-4xl" id="hero-main-content">
             <motion.div
+              key={`hero-title-${heroTitle}`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -190,24 +213,27 @@ export default function Home({
                 OneSky Outdoor
               </span>
               
-              {/* Main Headline */}
+              {/* Main Headline - Menggunakan data dari homepageConfig */}
               <h1 className="text-[62px] sm:text-[110px] md:text-[145px] lg:text-[170px] xl:text-[185px] font-black tracking-tighter uppercase leading-[0.8] text-white select-none">
-                Adventure
+                {heroTitle}
               </h1>
             </motion.div>
 
-            {/* Description & Detail */}
+            {/* Description & Detail - Menggunakan data dari homepageConfig */}
             <motion.p
+              key={`hero-subtitle-${heroSubtitle}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-xs sm:text-sm md:text-base text-white/80 max-w-md font-medium leading-relaxed"
             >
-              Rent premium camping, hiking, and outdoor equipment for unforgettable adventures. Clean, complete, and ready for every journey.
+              {heroSubtitle}
             </motion.p>
           </div>
 
-          {/* 3. Bottom Area: Frosted Glass Card & Actions */}
+          {/* ==========================================
+              3. Bottom Area: Frosted Glass Card & Actions
+              ========================================== */}
           <div className="relative z-10 flex flex-col sm:flex-row items-end justify-between gap-6 w-full pt-6 border-t border-white/10" id="hero-bottom-area">
             {/* Left: Frosted Glass Card */}
             <motion.div
@@ -269,7 +295,7 @@ export default function Home({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {homepageConfig.features.map((feature, index) => (
+          {currentConfig.features.map((feature, index) => (
             <motion.div
               key={feature.id}
               className="group p-6 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200/50 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
@@ -320,11 +346,11 @@ export default function Home({
               </p>
             </div>
 
-            {/* Right 3 status cards */}
+            {/* Right 3 status cards - Menggunakan currentConfig */}
             <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-6" id="availability-cards-grid">
               {/* Ready Card */}
               <motion.div
-                style={getStatusColorStyle(homepageConfig.statusColors.readyColor)}
+                style={getStatusColorStyle(currentConfig.statusColors.readyColor)}
                 className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
                 id="status-card-ready"
                 whileHover={{ y: -3 }}
@@ -332,7 +358,7 @@ export default function Home({
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Tersedia</span>
                   <span 
-                    style={getIndicatorDotStyle(homepageConfig.statusColors.readyColor)}
+                    style={getIndicatorDotStyle(currentConfig.statusColors.readyColor)}
                     className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
                   />
                 </div>
@@ -346,7 +372,7 @@ export default function Home({
 
               {/* Rented Card */}
               <motion.div
-                style={getStatusColorStyle(homepageConfig.statusColors.disewaColor)}
+                style={getStatusColorStyle(currentConfig.statusColors.disewaColor)}
                 className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
                 id="status-card-rented"
                 whileHover={{ y: -3 }}
@@ -354,7 +380,7 @@ export default function Home({
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Dipinjam</span>
                   <span 
-                    style={getIndicatorDotStyle(homepageConfig.statusColors.disewaColor)}
+                    style={getIndicatorDotStyle(currentConfig.statusColors.disewaColor)}
                     className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
                   />
                 </div>
@@ -368,7 +394,7 @@ export default function Home({
 
               {/* Unavailable Card */}
               <motion.div
-                style={getStatusColorStyle(homepageConfig.statusColors.tidakTersediaColor)}
+                style={getStatusColorStyle(currentConfig.statusColors.tidakTersediaColor)}
                 className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
                 id="status-card-unavailable"
                 whileHover={{ y: -3 }}
@@ -376,7 +402,7 @@ export default function Home({
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Dipesan</span>
                   <span 
-                    style={getIndicatorDotStyle(homepageConfig.statusColors.tidakTersediaColor)}
+                    style={getIndicatorDotStyle(currentConfig.statusColors.tidakTersediaColor)}
                     className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
                   />
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowUp, Sparkles, Bell } from 'lucide-react';
 
 // Types & Initial Data
@@ -57,7 +57,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 // ==========================================
 // MIGRATION HELPER
 // ==========================================
-import { migrateFromLocalStorage } from './utils/migrateData';
+import { migrateFromLocalStorage, seedInitialData } from './utils/migrateData';
 
 export default function App() {
   // ==========================================
@@ -70,26 +70,29 @@ export default function App() {
   const [documentation, setDocumentation] = useState<DocumentationItem[]>([]);
   const [settings, setSettings] = useState<SystemSettings>(INITIAL_SETTINGS);
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(INITIAL_HOMEPAGE_CONFIG);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const local = localStorage.getItem('onesky_cart');
+    return local ? JSON.parse(local) : [];
+  });
 
   // ==========================================
   // FIRESTORE REAL-TIME SUBSCRIPTIONS
   // ==========================================
-  const [isFirebaseReady, setIsFirebaseReady] = useState(false);
   const [isMigrationDone, setIsMigrationDone] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isSubscribing, setIsSubscribing] = useState(false);
 
   // Subscribe to Firestore collections - REAL-TIME SYNC
   useEffect(() => {
-    if (!isMigrationDone) return;
+    if (!isMigrationDone || isSubscribing) return;
 
     console.log('🔄 Starting Firestore real-time subscriptions...');
+    setIsSubscribing(true);
 
     // Subscribe to packages
     const unsubscribePackages = packageService.subscribe((data) => {
       console.log(`📦 Packages updated: ${data.length} items`);
       setPackages(data);
-      // Update localStorage untuk fallback
       localStorage.setItem('onesky_packages', JSON.stringify(data));
     });
 
@@ -133,13 +136,14 @@ export default function App() {
     // Subscribe to homepage config
     const unsubscribeHomepage = homepageService.subscribe((data) => {
       if (data) {
-        console.log('🏠 Homepage config updated');
+        console.log('🏠 Homepage config updated:', data);
         setHomepageConfig(data);
         localStorage.setItem('onesky_homepage', JSON.stringify(data));
       }
     });
 
     setIsInitialLoad(false);
+    setIsSubscribing(false);
 
     return () => {
       console.log('🔄 Cleaning up Firestore subscriptions...');
@@ -150,6 +154,7 @@ export default function App() {
       unsubscribeDocs();
       unsubscribeSettings();
       unsubscribeHomepage();
+      setIsSubscribing(false);
     };
   }, [isMigrationDone]);
 
@@ -201,49 +206,6 @@ export default function App() {
   }, []);
 
   // ==========================================
-  // SEED INITIAL DATA TO FIRESTORE
-  // ==========================================
-  const seedInitialData = async () => {
-    try {
-      // Seed packages
-      for (const pkg of INITIAL_PACKAGES) {
-        await packageService.save(pkg);
-      }
-      
-      // Seed unit prices
-      for (const item of INITIAL_UNIT_PRICES) {
-        await unitPriceService.save(item);
-      }
-      
-      // Seed terms
-      for (const term of INITIAL_TERMS) {
-        await termService.save(term);
-      }
-      
-      // Seed reviews
-      for (const review of INITIAL_REVIEWS) {
-        await reviewService.save(review);
-      }
-      
-      // Seed documentation
-      for (const doc of INITIAL_DOCUMENTATION) {
-        await documentationService.save(doc);
-      }
-      
-      // Seed settings
-      await settingsService.save(INITIAL_SETTINGS);
-      
-      // Seed homepage config
-      await homepageService.save(INITIAL_HOMEPAGE_CONFIG);
-      
-      console.log('✅ Initial data seeded successfully!');
-    } catch (error) {
-      console.error('Error seeding initial data:', error);
-      throw error;
-    }
-  };
-
-  // ==========================================
   // AUTH STATE MONITORING
   // ==========================================
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
@@ -289,6 +251,16 @@ export default function App() {
   });
 
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // ==========================================
+  // TOAST ALERTS CONTROLLER
+  // ==========================================
+  const triggerToast = useCallback((msg: string) => {
+    setToast({ show: true, message: msg });
+    setTimeout(() => {
+      setToast({ show: false, message: '' });
+    }, 3000);
+  }, []);
 
   // ==========================================
   // LOCAL STORAGE FALLBACK SYNC
@@ -341,7 +313,7 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Dynamic CSS Variables Injection for Primary and Secondary colors (Forest green & Beige customization)
+  // Dynamic CSS Variables Injection for Primary and Secondary colors
   useEffect(() => {
     document.documentElement.style.setProperty('--color-primary-custom', settings.primaryColor);
     document.documentElement.style.setProperty('--color-secondary-custom', settings.secondaryColor);
@@ -378,19 +350,9 @@ export default function App() {
   }, []);
 
   // ==========================================
-  // TOAST ALERTS CONTROLLER
-  // ==========================================
-  const triggerToast = (msg: string) => {
-    setToast({ show: true, message: msg });
-    setTimeout(() => {
-      setToast({ show: false, message: '' });
-    }, 3000);
-  };
-
-  // ==========================================
   // SHOPPING CART CONTROLLER FUNCTIONS
   // ==========================================
-  const handleAddToCart = (pkgItem: RentalPackage) => {
+  const handleAddToCart = useCallback((pkgItem: RentalPackage) => {
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.packageItem.id === pkgItem.id);
       if (existing) {
@@ -403,9 +365,9 @@ export default function App() {
       return [...prevCart, { packageItem: pkgItem, quantity: 1 }];
     });
     triggerToast(`✅ ${pkgItem.name} ditambahkan ke keranjang!`);
-  };
+  }, [triggerToast]);
 
-  const handleUpdateCartQuantity = (packageId: string, delta: number) => {
+  const handleUpdateCartQuantity = useCallback((packageId: string, delta: number) => {
     setCart((prevCart) =>
       prevCart
         .map((item) => {
@@ -417,22 +379,22 @@ export default function App() {
         })
         .filter((item) => item.quantity > 0)
     );
-  };
+  }, []);
 
-  const handleRemoveFromCart = (packageId: string) => {
+  const handleRemoveFromCart = useCallback((packageId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.packageItem.id !== packageId));
     triggerToast('🗑️ Item dihapus dari keranjang.');
-  };
+  }, [triggerToast]);
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     setCart([]);
     triggerToast('🧹 Keranjang belanja dikosongkan.');
-  };
+  }, [triggerToast]);
 
   // ==========================================
   // AUTHENTICATION LOGIC FLOW
   // ==========================================
-  const handleAdminLoginSuccess = (rememberMe: boolean) => {
+  const handleAdminLoginSuccess = useCallback((rememberMe: boolean) => {
     setIsAdminLoggedIn(true);
     if (rememberMe) {
       localStorage.setItem('onesky_admin_logged_in', 'true');
@@ -441,9 +403,9 @@ export default function App() {
     }
     setCurrentPage('admin-dashboard');
     triggerToast('🔐 Selamat datang di Dashboard Admin!');
-  };
+  }, [triggerToast]);
 
-  const handleAdminLogout = async () => {
+  const handleAdminLogout = useCallback(async () => {
     try {
       await signOut(auth);
       setIsAdminLoggedIn(false);
@@ -455,14 +417,14 @@ export default function App() {
       console.error('Logout error:', error);
       triggerToast('❌ Gagal logout. Silakan coba lagi.');
     }
-  };
+  }, [triggerToast]);
 
   // ==========================================
   // CRUD FUNCTIONS (Langsung ke Firestore)
   // ==========================================
   
-  // Packages CRUD
-  const handleSetPackages = (newPackages: RentalPackage[] | ((prev: RentalPackage[]) => RentalPackage[])) => {
+  // Packages CRUD - DIPERBAIKI
+  const handleSetPackages = useCallback((newPackages: RentalPackage[] | ((prev: RentalPackage[]) => RentalPackage[])) => {
     const updated = typeof newPackages === 'function' ? newPackages(packages) : newPackages;
     
     // Update state langsung
@@ -470,8 +432,10 @@ export default function App() {
     
     // Simpan ke Firestore untuk setiap perubahan
     if (isMigrationDone) {
-      // Hapus semua package yang tidak ada di updated
+      // Cari package yang dihapus
       const deletedIds = packages.filter(p => !updated.some(up => up.id === p.id)).map(p => p.id);
+      
+      // Hapus dari Firestore
       deletedIds.forEach(id => {
         packageService.delete(id).catch(err => console.error('Error deleting package:', err));
       });
@@ -481,15 +445,14 @@ export default function App() {
         packageService.save(pkg).catch(err => console.error('Error saving package:', err));
       });
     }
-  };
+  }, [packages, isMigrationDone]);
 
-  // Unit Prices CRUD
-  const handleSetUnitPrices = (newPrices: UnitPriceItem[] | ((prev: UnitPriceItem[]) => UnitPriceItem[])) => {
+  // Unit Prices CRUD - DIPERBAIKI
+  const handleSetUnitPrices = useCallback((newPrices: UnitPriceItem[] | ((prev: UnitPriceItem[]) => UnitPriceItem[])) => {
     const updated = typeof newPrices === 'function' ? newPrices(unitPrices) : newPrices;
     setUnitPrices(updated);
     
     if (isMigrationDone) {
-      // Hapus yang tidak ada
       const deletedIds = unitPrices.filter(p => !updated.some(up => up.id === p.id)).map(p => p.id);
       deletedIds.forEach(id => {
         unitPriceService.delete(id).catch(err => console.error('Error deleting unit price:', err));
@@ -499,10 +462,10 @@ export default function App() {
         unitPriceService.save(item).catch(err => console.error('Error saving unit price:', err));
       });
     }
-  };
+  }, [unitPrices, isMigrationDone]);
 
-  // Terms CRUD
-  const handleSetTerms = (newTerms: TermItem[] | ((prev: TermItem[]) => TermItem[])) => {
+  // Terms CRUD - DIPERBAIKI
+  const handleSetTerms = useCallback((newTerms: TermItem[] | ((prev: TermItem[]) => TermItem[])) => {
     const updated = typeof newTerms === 'function' ? newTerms(terms) : newTerms;
     setTerms(updated);
     
@@ -516,10 +479,10 @@ export default function App() {
         termService.save(term).catch(err => console.error('Error saving term:', err));
       });
     }
-  };
+  }, [terms, isMigrationDone]);
 
-  // Reviews CRUD
-  const handleSetReviews = (newReviews: ReviewItem[] | ((prev: ReviewItem[]) => ReviewItem[])) => {
+  // Reviews CRUD - DIPERBAIKI
+  const handleSetReviews = useCallback((newReviews: ReviewItem[] | ((prev: ReviewItem[]) => ReviewItem[])) => {
     const updated = typeof newReviews === 'function' ? newReviews(reviews) : newReviews;
     setReviews(updated);
     
@@ -533,10 +496,10 @@ export default function App() {
         reviewService.save(review).catch(err => console.error('Error saving review:', err));
       });
     }
-  };
+  }, [reviews, isMigrationDone]);
 
-  // Documentation CRUD
-  const handleSetDocumentation = (newDocs: DocumentationItem[] | ((prev: DocumentationItem[]) => DocumentationItem[])) => {
+  // Documentation CRUD - DIPERBAIKI
+  const handleSetDocumentation = useCallback((newDocs: DocumentationItem[] | ((prev: DocumentationItem[]) => DocumentationItem[])) => {
     const updated = typeof newDocs === 'function' ? newDocs(documentation) : newDocs;
     setDocumentation(updated);
     
@@ -550,32 +513,48 @@ export default function App() {
         documentationService.save(doc).catch(err => console.error('Error saving doc:', err));
       });
     }
-  };
+  }, [documentation, isMigrationDone]);
 
-  // Settings CRUD
-  const handleSetSettings = (newSettings: SystemSettings | ((prev: SystemSettings) => SystemSettings)) => {
+  // Settings CRUD - DIPERBAIKI
+  const handleSetSettings = useCallback((newSettings: SystemSettings | ((prev: SystemSettings) => SystemSettings)) => {
     const updated = typeof newSettings === 'function' ? newSettings(settings) : newSettings;
     setSettings(updated);
     
     if (isMigrationDone) {
-      settingsService.save(updated).catch(err => console.error('Error saving settings:', err));
+      settingsService.save(updated)
+        .then(() => console.log('✅ Settings saved to Firestore'))
+        .catch(err => console.error('Error saving settings:', err));
     }
-  };
+  }, [settings, isMigrationDone]);
 
-  // Homepage Config CRUD
-  const handleSetHomepageConfig = (newConfig: HomepageConfig | ((prev: HomepageConfig) => HomepageConfig)) => {
+  // Homepage Config CRUD - DIPERBAIKI DENGAN TOAST FEEDBACK
+  const handleSetHomepageConfig = useCallback((newConfig: HomepageConfig | ((prev: HomepageConfig) => HomepageConfig)) => {
     const updated = typeof newConfig === 'function' ? newConfig(homepageConfig) : newConfig;
+    
+    console.log('🏠 Updating homepage config:', updated);
     setHomepageConfig(updated);
     
+    // Update localStorage untuk fallback
+    localStorage.setItem('onesky_homepage', JSON.stringify(updated));
+    
+    // Simpan ke Firestore
     if (isMigrationDone) {
-      homepageService.save(updated).catch(err => console.error('Error saving homepage config:', err));
+      homepageService.save(updated)
+        .then(() => {
+          console.log('✅ Homepage config saved to Firestore');
+          triggerToast('✅ Konfigurasi homepage berhasil disimpan!');
+        })
+        .catch((error) => {
+          console.error('❌ Error saving homepage config:', error);
+          triggerToast('❌ Gagal menyimpan konfigurasi homepage');
+        });
     }
-  };
+  }, [homepageConfig, isMigrationDone, triggerToast]);
 
   // ==========================================
   // PAGINATION ROUTER SWITCH
   // ==========================================
-  const renderPageContent = () => {
+  const renderPageContent = useCallback(() => {
     switch (currentPage) {
       case 'home':
         return (
@@ -703,7 +682,30 @@ export default function App() {
           />
         );
     }
-  };
+  }, [
+    currentPage,
+    homepageConfig,
+    settings,
+    packages,
+    unitPrices,
+    terms,
+    reviews,
+    documentation,
+    isAdminLoggedIn,
+    totalCartCount,
+    handleAddToCart,
+    handleSetPackages,
+    handleSetUnitPrices,
+    handleSetTerms,
+    handleSetReviews,
+    handleSetDocumentation,
+    handleSetSettings,
+    handleSetHomepageConfig,
+    handleAdminLoginSuccess,
+    handleAdminLogout,
+    triggerToast,
+    isMigrationDone
+  ]);
 
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
 

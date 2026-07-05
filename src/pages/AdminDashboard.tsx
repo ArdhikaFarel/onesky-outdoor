@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -109,12 +109,24 @@ export default function AdminDashboard({
   const [termContent, setTermContent] = useState('');
   const [isTermFormOpen, setIsTermFormOpen] = useState(false);
 
-  // Homepage Config Form / Sub-states
+  // ==========================================
+  // HOMEPAGE CONFIG FORM - PERBAIKAN
+  // ==========================================
   const [editHeroTitle, setEditHeroTitle] = useState(homepageConfig.heroTitle);
   const [editHeroSub, setEditHeroSub] = useState(homepageConfig.heroSubtitle);
   const [editHeroBg, setEditHeroBg] = useState(homepageConfig.heroBgUrl);
+  const [editHeroBgFile, setEditHeroBgFile] = useState<File | null>(null);
+  const [isHeroUploading, setIsHeroUploading] = useState(false);
+
+  // Sync state ketika homepageConfig berubah dari props
+  useEffect(() => {
+    setEditHeroTitle(homepageConfig.heroTitle);
+    setEditHeroSub(homepageConfig.heroSubtitle);
+    setEditHeroBg(homepageConfig.heroBgUrl);
+  }, [homepageConfig]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
 
   // ==========================================
   // SIDEBAR NAVIGATION LIST
@@ -151,6 +163,43 @@ export default function AdminDashboard({
       onComplete(reader.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  // ==========================================
+  // HERO BANNER IMAGE UPLOAD - PERBAIKAN
+  // ==========================================
+  const handleHeroImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Cek ukuran file (max 1.5MB)
+    if (file.size > 1.5 * 1024 * 1024) {
+      onShowToast('❌ Ukuran gambar terlalu besar. Maksimal 1.5MB.');
+      return;
+    }
+
+    // Validasi tipe file
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      onShowToast('❌ Format file tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF.');
+      return;
+    }
+
+    // Simpan file untuk diupload nanti
+    setEditHeroBgFile(file);
+    
+    // Tampilkan preview sementara
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditHeroBg(reader.result as string);
+      onShowToast('✅ Gambar berhasil dipilih. Klik "Simpan Perubahan" untuk menyimpan.');
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input
+    if (heroFileInputRef.current) {
+      heroFileInputRef.current.value = '';
+    }
   };
 
   // ==========================================
@@ -341,16 +390,38 @@ export default function AdminDashboard({
   };
 
   // ==========================================
-  // 6. HOMEPAGE CONFIG OPERATIONS
+  // 6. HOMEPAGE CONFIG OPERATIONS - PERBAIKAN
   // ==========================================
   const handleSaveHomepageConfig = () => {
-    setHomepageConfig((prev) => ({
-      ...prev,
-      heroTitle: editHeroTitle,
-      heroSubtitle: editHeroSub,
-      heroBgUrl: editHeroBg,
-    }));
-    onShowToast('Konfigurasi beranda berhasil disimpan.');
+    // Set loading state
+    setIsHeroUploading(true);
+    
+    try {
+      // Jika ada file baru, proses upload ke Base64
+      let finalBgUrl = editHeroBg;
+      
+      // Update config dengan data baru
+      const updatedConfig = {
+        ...homepageConfig,
+        heroTitle: editHeroTitle,
+        heroSubtitle: editHeroSub,
+        heroBgUrl: finalBgUrl
+      };
+      
+      // Panggil setHomepageConfig dari parent (App.tsx)
+      setHomepageConfig(updatedConfig);
+      
+      // Reset file state
+      setEditHeroBgFile(null);
+      
+      onShowToast('✅ Konfigurasi homepage berhasil disimpan!');
+      console.log('🏠 Homepage config saved:', updatedConfig);
+    } catch (error) {
+      console.error('Error saving homepage config:', error);
+      onShowToast('❌ Gagal menyimpan konfigurasi homepage');
+    } finally {
+      setIsHeroUploading(false);
+    }
   };
 
   const handleFeatureTitleChange = (fId: string, nextTitle: string) => {
@@ -1091,7 +1162,7 @@ export default function AdminDashboard({
           )}
 
           {/* ==================================================
-              TAB 7: LIVE HOMEPAGE EDITING
+              TAB 7: LIVE HOMEPAGE EDITING - DIPERBAIKI
               ================================================== */}
           {activeTab === 'homepage' && (
             <div className="space-y-8" id="panel-homepage-config">
@@ -1100,11 +1171,33 @@ export default function AdminDashboard({
                 <p className="text-sm text-gray-500 dark:text-zinc-500">Ubah materi visual landing page seperti Judul Hero, Subtitle, Banner, serta warna status.</p>
               </div>
 
-              {/* Hero Banner Form */}
+              {/* Hero Banner Form - DIPERBAIKI */}
               <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm space-y-6">
                 <h3 className="font-sans font-bold text-lg border-b pb-2">Bagian Hero Banner</h3>
                 
                 <div className="space-y-4 text-sm">
+                  {/* Preview Banner saat ini - DITAMBAHKAN */}
+                  <div className="space-y-2">
+                    <label className="block font-bold text-xs uppercase tracking-wide text-gray-400">Preview Banner Saat Ini</label>
+                    <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800">
+                      {editHeroBg ? (
+                        <img 
+                          src={editHeroBg} 
+                          alt="Hero Banner Preview" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback jika gambar gagal dimuat
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1920&q=85';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                          Belum ada gambar banner
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Hero Title */}
                   <div className="space-y-1">
                     <label className="font-bold text-xs uppercase tracking-wide text-gray-400">Hero Main Title</label>
@@ -1113,6 +1206,7 @@ export default function AdminDashboard({
                       value={editHeroTitle}
                       onChange={(e) => setEditHeroTitle(e.target.value)}
                       className="w-full px-3 py-2 border bg-gray-50 dark:bg-zinc-800 rounded-xl"
+                      placeholder="Masukkan judul utama hero"
                     />
                   </div>
 
@@ -1124,39 +1218,46 @@ export default function AdminDashboard({
                       value={editHeroSub}
                       onChange={(e) => setEditHeroSub(e.target.value)}
                       className="w-full px-3 py-2 border bg-gray-50 dark:bg-zinc-800 rounded-xl"
+                      placeholder="Masukkan subtitle hero"
                     />
                   </div>
 
-                  {/* Banner image URL / Upload trigger */}
+                  {/* Upload Gambar Baru - DIPERBAIKI */}
                   <div className="space-y-2">
-                    <label className="block font-bold text-xs uppercase tracking-wide text-gray-400">Banner Background Image</label>
-                    <div className="flex items-center space-x-4">
+                    <label className="block font-bold text-xs uppercase tracking-wide text-gray-400">Ganti Banner Background</label>
+                    <div className="flex items-center space-x-4 flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 rounded-xl font-semibold flex items-center space-x-1"
+                        onClick={() => heroFileInputRef.current?.click()}
+                        className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl font-semibold flex items-center space-x-1.5 transition-colors"
                       >
                         <Upload className="h-4 w-4" />
                         <span>Pilih Foto Background Baru</span>
                       </button>
                       <input
                         type="file"
-                        ref={fileInputRef}
+                        ref={heroFileInputRef}
                         accept="image/*"
-                        onChange={(e) => handleImageUploadHelper(e, setEditHeroBg)}
+                        onChange={handleHeroImageUpload}
                         className="hidden"
                       />
-                      {editHeroBg && (
-                        <img src={editHeroBg} alt="Hero Banner Preview" className="h-10 w-16 object-cover rounded" />
+                      {editHeroBgFile && (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                          ✅ {editHeroBgFile.name} siap diupload
+                        </span>
                       )}
                     </div>
+                    <p className="text-[10px] text-gray-400 dark:text-zinc-500">
+                      Format: JPG, PNG, WEBP, GIF • Maksimal 1.5MB
+                    </p>
                   </div>
 
                   <button
                     onClick={handleSaveHomepageConfig}
-                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl"
+                    disabled={isHeroUploading}
+                    className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Simpan Perubahan Hero
+                    {isHeroUploading ? '⏳ Menyimpan...' : '💾 Simpan Perubahan Hero'}
                   </button>
                 </div>
               </div>

@@ -16,6 +16,15 @@ import {
   SystemSettings,
   HomepageConfig 
 } from '../types';
+import {
+  INITIAL_PACKAGES,
+  INITIAL_UNIT_PRICES,
+  INITIAL_TERMS,
+  INITIAL_REVIEWS,
+  INITIAL_DOCUMENTATION,
+  INITIAL_SETTINGS,
+  INITIAL_HOMEPAGE_CONFIG
+} from '../data/initialData';
 
 export async function migrateFromLocalStorage() {
   const results = {
@@ -106,6 +115,53 @@ export async function migrateFromLocalStorage() {
     return results;
   } catch (error) {
     console.error('❌ Migration failed:', error);
+    throw error;
+  }
+}
+
+export async function seedInitialData() {
+  try {
+    // Seed packages
+    for (const pkg of INITIAL_PACKAGES) {
+      await packageService.save(pkg);
+    }
+    console.log(`✅ ${INITIAL_PACKAGES.length} packages seeded`);
+    
+    // Seed unit prices
+    for (const item of INITIAL_UNIT_PRICES) {
+      await unitPriceService.save(item);
+    }
+    console.log(`✅ ${INITIAL_UNIT_PRICES.length} unit prices seeded`);
+    
+    // Seed terms
+    for (const term of INITIAL_TERMS) {
+      await termService.save(term);
+    }
+    console.log(`✅ ${INITIAL_TERMS.length} terms seeded`);
+    
+    // Seed reviews
+    for (const review of INITIAL_REVIEWS) {
+      await reviewService.save(review);
+    }
+    console.log(`✅ ${INITIAL_REVIEWS.length} reviews seeded`);
+    
+    // Seed documentation
+    for (const doc of INITIAL_DOCUMENTATION) {
+      await documentationService.save(doc);
+    }
+    console.log(`✅ ${INITIAL_DOCUMENTATION.length} documentation items seeded`);
+    
+    // Seed settings
+    await settingsService.save(INITIAL_SETTINGS);
+    console.log('✅ Settings seeded');
+    
+    // Seed homepage config
+    await homepageService.save(INITIAL_HOMEPAGE_CONFIG);
+    console.log('✅ Homepage config seeded');
+    
+    console.log('🎉 Initial data seeded successfully!');
+  } catch (error) {
+    console.error('❌ Error seeding initial data:', error);
     throw error;
   }
 }
