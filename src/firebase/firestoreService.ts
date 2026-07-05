@@ -1,7 +1,8 @@
+// =============================================
+// FIRESTORE SERVICE - FINAL VERSION
+// =============================================
+
 import { 
-  db 
-} from './config';
-import {
   collection,
   doc,
   getDocs,
@@ -13,14 +14,19 @@ import {
   where,
   orderBy,
   onSnapshot,
-  Timestamp,
-  DocumentData,
-  QuerySnapshot,
   CollectionReference,
   Query,
-  writeBatch
+  QuerySnapshot,
+  writeBatch,
+  DocumentData,
+  FirestoreError
 } from 'firebase/firestore';
-import { 
+import { db } from './config';
+
+// =============================================
+// TYPES - IMPORT DARI FILE TYPES
+// =============================================
+import type { 
   RentalPackage, 
   UnitPriceItem, 
   TermItem, 
@@ -28,22 +34,26 @@ import {
   DocumentationItem,
   SystemSettings,
   HomepageConfig,
-  ItemStatus 
+  ItemStatus,
+  CartItem
 } from '../types';
 
 // =============================================
 // COLLECTION REFERENCES
 // =============================================
 
-const COLLECTIONS = {
+export const COLLECTIONS = {
   PACKAGES: 'packages',
   UNIT_PRICES: 'unitPrices',
   TERMS: 'terms',
   REVIEWS: 'reviews',
   DOCUMENTATION: 'documentation',
   SETTINGS: 'settings',
-  HOMEPAGE: 'homepage'
-};
+  HOMEPAGE: 'homepage',
+  CART: 'cart'
+} as const;
+
+export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
 
 // =============================================
 // GENERIC CRUD OPERATIONS
@@ -53,14 +63,11 @@ export const firestoreService = {
   // ---- GET ALL DOCUMENTS ----
   async getAll<T>(collectionName: string): Promise<T[]> {
     try {
-      console.log(`📖 Fetching all documents from ${collectionName}...`);
       const querySnapshot = await getDocs(collection(db, collectionName));
-      const data = querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as T[];
-      console.log(`✅ ${collectionName}: ${data.length} documents found`);
-      return data;
     } catch (error) {
       console.error(`❌ Error fetching ${collectionName}:`, error);
       throw error;
@@ -70,17 +77,12 @@ export const firestoreService = {
   // ---- GET SINGLE DOCUMENT ----
   async getById<T>(collectionName: string, id: string): Promise<T | null> {
     try {
-      console.log(`📖 Fetching document ${id} from ${collectionName}...`);
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        const data = { id: docSnap.id, ...docSnap.data() } as T;
-        console.log(`✅ Document ${id} found`);
-        return data;
-      } else {
-        console.warn(`⚠️ Document ${id} not found in ${collectionName}`);
-        return null;
+        return { id: docSnap.id, ...docSnap.data() } as T;
       }
+      return null;
     } catch (error) {
       console.error(`❌ Error fetching document ${id}:`, error);
       throw error;
@@ -93,10 +95,8 @@ export const firestoreService = {
     data: T
   ): Promise<void> {
     try {
-      console.log(`💾 Saving document ${data.id} to ${collectionName}...`);
       const docRef = doc(db, collectionName, data.id);
       await setDoc(docRef, data, { merge: true });
-      console.log(`✅ Document ${data.id} saved successfully`);
     } catch (error) {
       console.error(`❌ Error saving document ${data.id}:`, error);
       throw error;
@@ -104,12 +104,10 @@ export const firestoreService = {
   },
 
   // ---- UPDATE SPECIFIC FIELDS ----
-  async update(collectionName: string, id: string, data: any): Promise<void> {
+  async update(collectionName: string, id: string, data: Partial<any>): Promise<void> {
     try {
-      console.log(`🔄 Updating document ${id} in ${collectionName}...`);
       const docRef = doc(db, collectionName, id);
       await updateDoc(docRef, data);
-      console.log(`✅ Document ${id} updated successfully`);
     } catch (error) {
       console.error(`❌ Error updating document ${id}:`, error);
       throw error;
@@ -119,40 +117,31 @@ export const firestoreService = {
   // ---- DELETE DOCUMENT ----
   async delete(collectionName: string, id: string): Promise<void> {
     try {
-      console.log(`🗑️ Deleting document ${id} from ${collectionName}...`);
-      
-      // First verify document exists
       const docRef = doc(db, collectionName, id);
       const docSnap = await getDoc(docRef);
-      
       if (!docSnap.exists()) {
         console.warn(`⚠️ Document ${id} not found in ${collectionName}, skipping delete`);
         return;
       }
-      
       await deleteDoc(docRef);
-      console.log(`✅ Document ${id} deleted successfully from ${collectionName}`);
     } catch (error) {
-      console.error(`❌ Error deleting document ${id} from ${collectionName}:`, error);
+      console.error(`❌ Error deleting document ${id}:`, error);
       throw error;
     }
   },
 
   // ---- BULK DELETE ----
   async bulkDelete(collectionName: string, ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
     try {
-      console.log(`🗑️ Bulk deleting ${ids.length} documents from ${collectionName}...`);
       const batch = writeBatch(db);
-      
       for (const id of ids) {
         const docRef = doc(db, collectionName, id);
         batch.delete(docRef);
       }
-      
       await batch.commit();
-      console.log(`✅ ${ids.length} documents deleted successfully`);
     } catch (error) {
-      console.error(`❌ Error in bulk delete:`, error);
+      console.error('❌ Error in bulk delete:', error);
       throw error;
     }
   },
@@ -162,19 +151,16 @@ export const firestoreService = {
     collectionName: string,
     items: T[]
   ): Promise<void> {
+    if (items.length === 0) return;
     try {
-      console.log(`📝 Bulk writing ${items.length} documents to ${collectionName}...`);
       const batch = writeBatch(db);
-      
       for (const item of items) {
         const docRef = doc(db, collectionName, item.id);
         batch.set(docRef, item, { merge: true });
       }
-      
       await batch.commit();
-      console.log(`✅ ${items.length} documents written successfully`);
     } catch (error) {
-      console.error(`❌ Error in bulk write:`, error);
+      console.error('❌ Error in bulk write:', error);
       throw error;
     }
   },
@@ -186,18 +172,12 @@ export const firestoreService = {
     value: any
   ): Promise<T[]> {
     try {
-      console.log(`🔍 Querying ${collectionName} where ${field} = ${value}...`);
-      const q = query(
-        collection(db, collectionName),
-        where(field, '==', value)
-      );
+      const q = query(collection(db, collectionName), where(field, '==', value));
       const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as T[];
-      console.log(`✅ ${data.length} documents found`);
-      return data;
     } catch (error) {
       console.error(`❌ Error querying ${collectionName}:`, error);
       throw error;
@@ -211,8 +191,6 @@ export const firestoreService = {
     orderByField?: string,
     orderDirection?: 'asc' | 'desc'
   ): () => void {
-    console.log(`👂 Listening to ${collectionName} collection...`);
-    
     let q: CollectionReference | Query = collection(db, collectionName);
     
     if (orderByField) {
@@ -220,21 +198,19 @@ export const firestoreService = {
     }
 
     const unsubscribe = onSnapshot(
-      q as any, 
+      q as any,
       (snapshot: QuerySnapshot) => {
         try {
           const data = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           })) as T[];
-          
-          console.log(`📡 ${collectionName} real-time update: ${data.length} items`);
           callback(data);
         } catch (error) {
           console.error(`❌ Error processing ${collectionName} snapshot:`, error);
         }
       },
-      (error) => {
+      (error: FirestoreError) => {
         console.error(`❌ Error in ${collectionName} subscription:`, error);
       }
     );
@@ -248,8 +224,6 @@ export const firestoreService = {
     documentId: string,
     callback: (data: T | null) => void
   ): () => void {
-    console.log(`👂 Listening to document ${documentId} in ${collectionName}...`);
-    
     const docRef = doc(db, collectionName, documentId);
     
     const unsubscribe = onSnapshot(
@@ -258,17 +232,15 @@ export const firestoreService = {
         try {
           if (docSnap.exists()) {
             const data = { id: docSnap.id, ...docSnap.data() } as T;
-            console.log(`📡 Document ${documentId} updated`);
             callback(data);
           } else {
-            console.warn(`⚠️ Document ${documentId} not found`);
             callback(null);
           }
         } catch (error) {
           console.error(`❌ Error processing document snapshot:`, error);
         }
       },
-      (error) => {
+      (error: FirestoreError) => {
         console.error(`❌ Error in document subscription:`, error);
       }
     );
@@ -283,32 +255,19 @@ export const firestoreService = {
       const docSnap = await getDoc(docRef);
       return docSnap.exists();
     } catch (error) {
-      console.error(`❌ Error checking document existence:`, error);
+      console.error('❌ Error checking document existence:', error);
       return false;
     }
   },
 
-  // ---- DELETE COLLECTION (USE WITH CAUTION) ----
-  async deleteCollection(collectionName: string, batchSize: number = 10): Promise<void> {
+  // ---- COUNT DOCUMENTS ----
+  async count(collectionName: string): Promise<number> {
     try {
-      console.log(`⚠️ Deleting entire collection: ${collectionName}`);
-      
-      const collectionRef = collection(db, collectionName);
-      const querySnapshot = await getDocs(collectionRef);
-      
-      const batch = writeBatch(db);
-      let count = 0;
-      
-      querySnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-        count++;
-      });
-      
-      await batch.commit();
-      console.log(`✅ ${count} documents deleted from ${collectionName}`);
+      const querySnapshot = await getDocs(collection(db, collectionName));
+      return querySnapshot.size;
     } catch (error) {
-      console.error(`❌ Error deleting collection:`, error);
-      throw error;
+      console.error(`❌ Error counting ${collectionName}:`, error);
+      return 0;
     }
   }
 };
@@ -324,24 +283,7 @@ export const packageService = {
   
   save: (pkg: RentalPackage) => firestoreService.set(COLLECTIONS.PACKAGES, pkg),
   
-  delete: async (id: string): Promise<void> => {
-    try {
-      console.log(`🗑️ Deleting package: ${id}`);
-      
-      // Verify document exists first
-      const exists = await firestoreService.exists(COLLECTIONS.PACKAGES, id);
-      if (!exists) {
-        console.warn(`⚠️ Package ${id} not found, skipping delete`);
-        return;
-      }
-      
-      await firestoreService.delete(COLLECTIONS.PACKAGES, id);
-      console.log(`✅ Package ${id} deleted successfully`);
-    } catch (error) {
-      console.error(`❌ Error deleting package ${id}:`, error);
-      throw error;
-    }
-  },
+  delete: (id: string) => firestoreService.delete(COLLECTIONS.PACKAGES, id),
   
   bulkDelete: (ids: string[]) => firestoreService.bulkDelete(COLLECTIONS.PACKAGES, ids),
   
@@ -352,13 +294,7 @@ export const packageService = {
     firestoreService.update(COLLECTIONS.PACKAGES, id, { [field]: value }),
   
   subscribe: (callback: (data: RentalPackage[]) => void) => 
-    firestoreService.subscribeToCollection<RentalPackage>(
-      COLLECTIONS.PACKAGES, 
-      (data) => {
-        console.log(`📦 Real-time packages update: ${data.length} items`);
-        callback(data);
-      }
-    ),
+    firestoreService.subscribeToCollection<RentalPackage>(COLLECTIONS.PACKAGES, callback),
   
   subscribeToPackage: (id: string, callback: (data: RentalPackage | null) => void) =>
     firestoreService.subscribeToDocument<RentalPackage>(COLLECTIONS.PACKAGES, id, callback),
@@ -367,7 +303,9 @@ export const packageService = {
     firestoreService.queryByField<RentalPackage>(COLLECTIONS.PACKAGES, 'status', status),
   
   bulkWrite: (packages: RentalPackage[]) => 
-    firestoreService.bulkWrite(COLLECTIONS.PACKAGES, packages)
+    firestoreService.bulkWrite(COLLECTIONS.PACKAGES, packages),
+  
+  count: () => firestoreService.count(COLLECTIONS.PACKAGES)
 };
 
 // =============================================
@@ -381,21 +319,7 @@ export const unitPriceService = {
   
   save: (item: UnitPriceItem) => firestoreService.set(COLLECTIONS.UNIT_PRICES, item),
   
-  delete: async (id: string): Promise<void> => {
-    try {
-      console.log(`🗑️ Deleting unit price: ${id}`);
-      const exists = await firestoreService.exists(COLLECTIONS.UNIT_PRICES, id);
-      if (!exists) {
-        console.warn(`⚠️ Unit price ${id} not found, skipping delete`);
-        return;
-      }
-      await firestoreService.delete(COLLECTIONS.UNIT_PRICES, id);
-      console.log(`✅ Unit price ${id} deleted successfully`);
-    } catch (error) {
-      console.error(`❌ Error deleting unit price ${id}:`, error);
-      throw error;
-    }
-  },
+  delete: (id: string) => firestoreService.delete(COLLECTIONS.UNIT_PRICES, id),
   
   bulkDelete: (ids: string[]) => firestoreService.bulkDelete(COLLECTIONS.UNIT_PRICES, ids),
   
@@ -410,7 +334,9 @@ export const unitPriceService = {
     ),
   
   bulkWrite: (items: UnitPriceItem[]) => 
-    firestoreService.bulkWrite(COLLECTIONS.UNIT_PRICES, items)
+    firestoreService.bulkWrite(COLLECTIONS.UNIT_PRICES, items),
+  
+  count: () => firestoreService.count(COLLECTIONS.UNIT_PRICES)
 };
 
 // =============================================
@@ -424,26 +350,11 @@ export const termService = {
   
   save: (term: TermItem) => firestoreService.set(COLLECTIONS.TERMS, term),
   
-  delete: async (id: string): Promise<void> => {
-    try {
-      console.log(`🗑️ Deleting term: ${id}`);
-      const exists = await firestoreService.exists(COLLECTIONS.TERMS, id);
-      if (!exists) {
-        console.warn(`⚠️ Term ${id} not found, skipping delete`);
-        return;
-      }
-      await firestoreService.delete(COLLECTIONS.TERMS, id);
-      console.log(`✅ Term ${id} deleted successfully`);
-    } catch (error) {
-      console.error(`❌ Error deleting term ${id}:`, error);
-      throw error;
-    }
-  },
+  delete: (id: string) => firestoreService.delete(COLLECTIONS.TERMS, id),
   
   bulkDelete: (ids: string[]) => firestoreService.bulkDelete(COLLECTIONS.TERMS, ids),
   
   reorder: async (terms: TermItem[]) => {
-    // Update all terms with new indexes
     for (const term of terms) {
       await termService.save(term);
     }
@@ -457,7 +368,9 @@ export const termService = {
     ),
   
   bulkWrite: (items: TermItem[]) => 
-    firestoreService.bulkWrite(COLLECTIONS.TERMS, items)
+    firestoreService.bulkWrite(COLLECTIONS.TERMS, items),
+  
+  count: () => firestoreService.count(COLLECTIONS.TERMS)
 };
 
 // =============================================
@@ -471,21 +384,7 @@ export const reviewService = {
   
   save: (review: ReviewItem) => firestoreService.set(COLLECTIONS.REVIEWS, review),
   
-  delete: async (id: string): Promise<void> => {
-    try {
-      console.log(`🗑️ Deleting review: ${id}`);
-      const exists = await firestoreService.exists(COLLECTIONS.REVIEWS, id);
-      if (!exists) {
-        console.warn(`⚠️ Review ${id} not found, skipping delete`);
-        return;
-      }
-      await firestoreService.delete(COLLECTIONS.REVIEWS, id);
-      console.log(`✅ Review ${id} deleted successfully`);
-    } catch (error) {
-      console.error(`❌ Error deleting review ${id}:`, error);
-      throw error;
-    }
-  },
+  delete: (id: string) => firestoreService.delete(COLLECTIONS.REVIEWS, id),
   
   bulkDelete: (ids: string[]) => firestoreService.bulkDelete(COLLECTIONS.REVIEWS, ids),
   
@@ -499,10 +398,7 @@ export const reviewService = {
     firestoreService.queryByField<ReviewItem>(COLLECTIONS.REVIEWS, 'hidden', true),
   
   subscribe: (callback: (data: ReviewItem[]) => void) => 
-    firestoreService.subscribeToCollection<ReviewItem>(
-      COLLECTIONS.REVIEWS, 
-      callback
-    ),
+    firestoreService.subscribeToCollection<ReviewItem>(COLLECTIONS.REVIEWS, callback),
   
   subscribeToVisible: (callback: (data: ReviewItem[]) => void) => {
     return firestoreService.subscribeToCollection<ReviewItem>(
@@ -512,7 +408,9 @@ export const reviewService = {
   },
   
   bulkWrite: (items: ReviewItem[]) => 
-    firestoreService.bulkWrite(COLLECTIONS.REVIEWS, items)
+    firestoreService.bulkWrite(COLLECTIONS.REVIEWS, items),
+  
+  count: () => firestoreService.count(COLLECTIONS.REVIEWS)
 };
 
 // =============================================
@@ -526,21 +424,7 @@ export const documentationService = {
   
   save: (doc: DocumentationItem) => firestoreService.set(COLLECTIONS.DOCUMENTATION, doc),
   
-  delete: async (id: string): Promise<void> => {
-    try {
-      console.log(`🗑️ Deleting documentation: ${id}`);
-      const exists = await firestoreService.exists(COLLECTIONS.DOCUMENTATION, id);
-      if (!exists) {
-        console.warn(`⚠️ Documentation ${id} not found, skipping delete`);
-        return;
-      }
-      await firestoreService.delete(COLLECTIONS.DOCUMENTATION, id);
-      console.log(`✅ Documentation ${id} deleted successfully`);
-    } catch (error) {
-      console.error(`❌ Error deleting documentation ${id}:`, error);
-      throw error;
-    }
-  },
+  delete: (id: string) => firestoreService.delete(COLLECTIONS.DOCUMENTATION, id),
   
   bulkDelete: (ids: string[]) => firestoreService.bulkDelete(COLLECTIONS.DOCUMENTATION, ids),
   
@@ -548,13 +432,12 @@ export const documentationService = {
     firestoreService.update(COLLECTIONS.DOCUMENTATION, id, { caption }),
   
   subscribe: (callback: (data: DocumentationItem[]) => void) => 
-    firestoreService.subscribeToCollection<DocumentationItem>(
-      COLLECTIONS.DOCUMENTATION, 
-      callback
-    ),
+    firestoreService.subscribeToCollection<DocumentationItem>(COLLECTIONS.DOCUMENTATION, callback),
   
   bulkWrite: (items: DocumentationItem[]) => 
-    firestoreService.bulkWrite(COLLECTIONS.DOCUMENTATION, items)
+    firestoreService.bulkWrite(COLLECTIONS.DOCUMENTATION, items),
+  
+  count: () => firestoreService.count(COLLECTIONS.DOCUMENTATION)
 };
 
 // =============================================
@@ -570,13 +453,18 @@ export const settingsService = {
   update: (data: Partial<SystemSettings>) =>
     firestoreService.update(COLLECTIONS.SETTINGS, 'main', data),
   
+  updatePrimaryColor: (color: string) =>
+    firestoreService.update(COLLECTIONS.SETTINGS, 'main', { primaryColor: color }),
+  
+  updateSecondaryColor: (color: string) =>
+    firestoreService.update(COLLECTIONS.SETTINGS, 'main', { secondaryColor: color }),
+  
   subscribe: (callback: (data: SystemSettings) => void) => {
     return firestoreService.subscribeToDocument<SystemSettings>(
       COLLECTIONS.SETTINGS,
       'main',
       (data) => {
         if (data) {
-          console.log('⚙️ Settings updated');
           callback(data);
         }
       }
@@ -622,7 +510,6 @@ export const homepageService = {
       'main',
       (data) => {
         if (data) {
-          console.log('🏠 Homepage config updated');
           callback(data);
         }
       }
@@ -636,8 +523,6 @@ export const homepageService = {
 
 export const exportAllData = async () => {
   try {
-    console.log('📦 Exporting all data from Firestore...');
-    
     const [packages, unitPrices, terms, reviews, documentation, settings, homepage] = await Promise.all([
       packageService.getAll(),
       unitPriceService.getAll(),
@@ -648,7 +533,7 @@ export const exportAllData = async () => {
       homepageService.get()
     ]);
     
-    const exportData = {
+    return {
       packages,
       unitPrices,
       terms,
@@ -658,9 +543,6 @@ export const exportAllData = async () => {
       homepage,
       exportedAt: new Date().toISOString()
     };
-    
-    console.log('✅ Data exported successfully');
-    return exportData;
   } catch (error) {
     console.error('❌ Error exporting data:', error);
     throw error;
@@ -669,8 +551,6 @@ export const exportAllData = async () => {
 
 export const importAllData = async (data: any) => {
   try {
-    console.log('📥 Importing all data to Firestore...');
-    
     if (data.packages) {
       await packageService.bulkWrite(data.packages);
     }
@@ -692,7 +572,6 @@ export const importAllData = async (data: any) => {
     if (data.homepage) {
       await homepageService.save(data.homepage);
     }
-    
     console.log('✅ Data imported successfully');
   } catch (error) {
     console.error('❌ Error importing data:', error);
@@ -706,14 +585,14 @@ export const importAllData = async (data: any) => {
 
 export const resetDatabase = async () => {
   try {
-    console.log('⚠️ Resetting entire database...');
+    console.warn('⚠️ Resetting entire database...');
     
     await Promise.all([
-      firestoreService.deleteCollection(COLLECTIONS.PACKAGES),
-      firestoreService.deleteCollection(COLLECTIONS.UNIT_PRICES),
-      firestoreService.deleteCollection(COLLECTIONS.TERMS),
-      firestoreService.deleteCollection(COLLECTIONS.REVIEWS),
-      firestoreService.deleteCollection(COLLECTIONS.DOCUMENTATION),
+      firestoreService.bulkDelete(COLLECTIONS.PACKAGES, (await packageService.getAll()).map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.UNIT_PRICES, (await unitPriceService.getAll()).map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.TERMS, (await termService.getAll()).map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.REVIEWS, (await reviewService.getAll()).map(p => p.id)),
+      firestoreService.bulkDelete(COLLECTIONS.DOCUMENTATION, (await documentationService.getAll()).map(p => p.id)),
       firestoreService.delete(COLLECTIONS.SETTINGS, 'main'),
       firestoreService.delete(COLLECTIONS.HOMEPAGE, 'main')
     ]);

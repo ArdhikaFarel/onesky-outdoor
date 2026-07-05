@@ -1,5 +1,5 @@
 // =============================================
-// IMPORTS - HINDARI CIRCULAR DEPENDENCY
+// IMPORTS - DARI FIRESTORE SERVICE
 // =============================================
 import { 
   packageService, 
@@ -30,92 +30,64 @@ import {
 } from '../data/initialData';
 
 export async function migrateFromLocalStorage() {
-  const results = {
-    packages: 0,
-    unitPrices: 0,
-    terms: 0,
-    reviews: 0,
-    documentation: 0,
-    settings: 0,
-    homepage: 0
-  };
-
   try {
-    // 1. Migrasi Packages
+    // Migrasi Packages
     const packages = localStorage.getItem('onesky_packages');
     if (packages) {
       const data = JSON.parse(packages) as RentalPackage[];
-      for (const item of data) {
-        await packageService.save(item);
-      }
-      results.packages = data.length;
+      await packageService.bulkWrite(data);
       console.log(`✅ ${data.length} packages migrated`);
     }
 
-    // 2. Migrasi Unit Prices
+    // Migrasi Unit Prices
     const unitPrices = localStorage.getItem('onesky_unit_prices');
     if (unitPrices) {
       const data = JSON.parse(unitPrices) as UnitPriceItem[];
-      for (const item of data) {
-        await unitPriceService.save(item);
-      }
-      results.unitPrices = data.length;
+      await unitPriceService.bulkWrite(data);
       console.log(`✅ ${data.length} unit prices migrated`);
     }
 
-    // 3. Migrasi Terms
+    // Migrasi Terms
     const terms = localStorage.getItem('onesky_terms');
     if (terms) {
       const data = JSON.parse(terms) as TermItem[];
-      for (const item of data) {
-        await termService.save(item);
-      }
-      results.terms = data.length;
+      await termService.bulkWrite(data);
       console.log(`✅ ${data.length} terms migrated`);
     }
 
-    // 4. Migrasi Reviews
+    // Migrasi Reviews
     const reviews = localStorage.getItem('onesky_reviews');
     if (reviews) {
       const data = JSON.parse(reviews) as ReviewItem[];
-      for (const item of data) {
-        await reviewService.save(item);
-      }
-      results.reviews = data.length;
+      await reviewService.bulkWrite(data);
       console.log(`✅ ${data.length} reviews migrated`);
     }
 
-    // 5. Migrasi Documentation
+    // Migrasi Documentation
     const docs = localStorage.getItem('onesky_documentation');
     if (docs) {
       const data = JSON.parse(docs) as DocumentationItem[];
-      for (const item of data) {
-        await documentationService.save(item);
-      }
-      results.documentation = data.length;
+      await documentationService.bulkWrite(data);
       console.log(`✅ ${data.length} documentation items migrated`);
     }
 
-    // 6. Migrasi Settings
+    // Migrasi Settings
     const settings = localStorage.getItem('onesky_settings');
     if (settings) {
       const data = JSON.parse(settings) as SystemSettings;
       await settingsService.save(data);
-      results.settings = 1;
-      console.log(`✅ Settings migrated`);
+      console.log('✅ Settings migrated');
     }
 
-    // 7. Migrasi Homepage Config
+    // Migrasi Homepage Config
     const homepage = localStorage.getItem('onesky_homepage');
     if (homepage) {
       const data = JSON.parse(homepage) as HomepageConfig;
       await homepageService.save(data);
-      results.homepage = 1;
-      console.log(`✅ Homepage config migrated`);
+      console.log('✅ Homepage config migrated');
     }
 
-    console.log('🎉 Migration complete!', results);
-    return results;
+    console.log('🎉 Migration complete!');
   } catch (error) {
     console.error('❌ Migration failed:', error);
     throw error;
@@ -125,33 +97,23 @@ export async function migrateFromLocalStorage() {
 export async function seedInitialData() {
   try {
     // Seed packages
-    for (const pkg of INITIAL_PACKAGES) {
-      await packageService.save(pkg);
-    }
+    await packageService.bulkWrite(INITIAL_PACKAGES);
     console.log(`✅ ${INITIAL_PACKAGES.length} packages seeded`);
     
     // Seed unit prices
-    for (const item of INITIAL_UNIT_PRICES) {
-      await unitPriceService.save(item);
-    }
+    await unitPriceService.bulkWrite(INITIAL_UNIT_PRICES);
     console.log(`✅ ${INITIAL_UNIT_PRICES.length} unit prices seeded`);
     
     // Seed terms
-    for (const term of INITIAL_TERMS) {
-      await termService.save(term);
-    }
+    await termService.bulkWrite(INITIAL_TERMS);
     console.log(`✅ ${INITIAL_TERMS.length} terms seeded`);
     
     // Seed reviews
-    for (const review of INITIAL_REVIEWS) {
-      await reviewService.save(review);
-    }
+    await reviewService.bulkWrite(INITIAL_REVIEWS);
     console.log(`✅ ${INITIAL_REVIEWS.length} reviews seeded`);
     
     // Seed documentation
-    for (const doc of INITIAL_DOCUMENTATION) {
-      await documentationService.save(doc);
-    }
+    await documentationService.bulkWrite(INITIAL_DOCUMENTATION);
     console.log(`✅ ${INITIAL_DOCUMENTATION.length} documentation items seeded`);
     
     // Seed settings
