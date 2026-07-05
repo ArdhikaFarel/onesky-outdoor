@@ -1,3 +1,6 @@
+// =============================================
+// IMPORTS - HINDARI CIRCULAR DEPENDENCY
+// =============================================
 import { 
   packageService, 
   unitPriceService, 
@@ -7,7 +10,7 @@ import {
   settingsService,
   homepageService 
 } from '../firebase/firestoreService';
-import { 
+import type { 
   RentalPackage, 
   UnitPriceItem, 
   TermItem, 
