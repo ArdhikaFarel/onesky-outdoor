@@ -208,10 +208,6 @@ export default function Home({
               transition={{ duration: 0.8 }}
               className="space-y-0.5 sm:space-y-1"
             >
-              {/* Small label */}
-              <span className="block text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-[0.35em] text-white/90">
-                OneSky Outdoor
-              </span>
               
               {/* Main Headline - Menggunakan data dari homepageConfig */}
               <h1 className="text-[62px] sm:text-[110px] md:text-[145px] lg:text-[170px] xl:text-[185px] font-black tracking-tighter uppercase leading-[0.8] text-white select-none">
