@@ -230,24 +230,7 @@ export default function Home({
               {heroSubtitle}
             </motion.p>
           </div>
-
-          {/* ==========================================
-              3. Bottom Area: Frosted Glass Card & Actions
-              ========================================== */}
-          <div className="relative z-10 flex flex-col sm:flex-row items-end justify-between gap-6 w-full pt-6 border-t border-white/10" id="hero-bottom-area">
-            {/* Left: Frosted Glass Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[1.8rem] p-5 sm:p-6 text-white max-w-xs shadow-2xl space-y-2.5"
-            >
-              <div className="text-2xl sm:text-3xl font-black font-sans tracking-tight text-white">100+ Equipment</div>
-              <p className="text-[11px] sm:text-xs text-white/80 font-semibold leading-relaxed">
-                Camping, Hiking, Cooking Gear, Backpacks, Tents, and more.
-              </p>
-            </motion.div>
-
+          
             {/* Right: CTA Button & Scroll Indicator */}
             <div className="flex items-center space-x-3.5 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
               {/* Large Pill CTA */}
