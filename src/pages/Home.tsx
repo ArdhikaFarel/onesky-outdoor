@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Sparkles, CheckCircle2, ChevronRight, Mountain, Star, Shield, ArrowRight, Search, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ArrowRight, Search, ShoppingCart } from 'lucide-react';
 import { HomepageConfig, SystemSettings } from '../types';
 import { motion } from 'motion/react';
+import heroBg from '../assets/images/BACKGROUND HERO.jpg';
 
 interface HomeProps {
   homepageConfig: HomepageConfig;
@@ -50,11 +51,8 @@ export default function Home({
   // ==========================================
   // HERO BANNER BACKGROUND IMAGE
   // ==========================================
-  const heroBgImage = currentConfig.heroBgUrl || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1920&q=85';
-  
-  // Hero Title & Subtitle dengan fallback
-  const heroTitle = currentConfig.heroTitle || 'Adventure';
-  const heroSubtitle = currentConfig.heroSubtitle || 'Rent premium camping, hiking, and outdoor equipment for unforgettable adventures. Clean, complete, and ready for every journey.';
+  const heroBgImage =
+currentConfig.heroBgUrl || heroBg;
 
   return (
     <div className="space-y-24 pb-24 bg-[#faf9f6] dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 transition-colors duration-300 overflow-hidden" id="home-page">
@@ -80,67 +78,34 @@ export default function Home({
             {/* Left Side: Logo & Links */}
             <div className="flex items-center space-x-6">
               {/* Logo */}
-              <div 
-                onClick={() => setCurrentPage('home')}
-                className="flex items-center space-x-2.5 cursor-pointer group"
-              >
-                <div className="p-2 rounded-xl bg-white text-[#1b4332] shadow-md transition-transform group-hover:scale-105 duration-300">
-                  <Mountain className="h-5 w-5" />
-                </div>
-                <span className="font-sans font-black text-lg tracking-tight text-white">
-                  OneSky <span className="font-light text-white/85">Outdoor</span>
-                </span>
-              </div>
-
+                <div
+  onClick={() => setCurrentPage('home')}
+  className="cursor-pointer"
+>
+  <h1 className="text-white text-lg sm:text-xl lg:text-2xl font-extrabold tracking-[0.35em] uppercase select-none">
+  ONESKY
+  <span className="font-light ml-2">OUTDOOR</span>
+</h1>
+</div>
               {/* Nav Links - Desktop */}
-              <div className="hidden md:flex items-center space-x-2">
-                <button 
-                  onClick={() => setCurrentPage('home')}
-                  className="bg-white text-[#1b4332] rounded-full px-5 py-2 text-xs font-bold shadow-md cursor-pointer transition-all"
-                >
-                  Beranda
-                </button>
-                <button 
-                  onClick={() => {
-                    setCurrentPage('katalog');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="border border-white/20 hover:border-white text-white hover:bg-white/10 rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer"
-                >
-                  Rental
-                </button>
-                <button 
-                  onClick={() => {
-                    setCurrentPage('katalog');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="border border-white/20 hover:border-white text-white hover:bg-white/10 rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer"
-                >
-                  Categories
-                </button>
-                <button 
-                  onClick={() => {
-                    const element = document.getElementById('home-features-section');
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="border border-white/20 hover:border-white text-white hover:bg-white/10 rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer"
-                >
-                  About
-                </button>
-                <button 
-                  onClick={() => {
-                    const element = document.getElementById('app-footer');
-                    if (element) {
-                      element.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="border border-white/20 hover:border-white text-white hover:bg-white/10 rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer"
-                >
-                  Contact
-                </button>
-              </div>
+<div className="hidden md:flex items-center space-x-2">
+  <button
+    onClick={() => setCurrentPage('home')}
+    className="bg-white text-[#1b4332] rounded-full px-5 py-2 text-xs font-bold shadow-md cursor-pointer transition-all"
+  >
+    Beranda
+  </button>
+
+  <button
+    onClick={() => {
+      setCurrentPage('katalog');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    className="border border-white/20 hover:border-white text-white hover:bg-white/10 rounded-full px-5 py-2 text-xs font-semibold transition-all duration-300 cursor-pointer"
+  >
+    Rental
+  </button>
+</div>
 
               {/* Nav Links - Mobile */}
               <div className="flex md:hidden items-center space-x-1.5 overflow-x-auto scrollbar-none py-1 max-w-[120px] sm:max-w-[240px]">
@@ -197,208 +162,155 @@ export default function Home({
             </div>
           </nav>
 
-          {/* ==========================================
-              2. Immersive Main Hero Typography Content
-              ========================================== */}
-          <div className="relative z-10 my-auto text-left space-y-4 max-w-4xl" id="hero-main-content">
-            <motion.div
-              key={`hero-title-${heroTitle}`}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-0.5 sm:space-y-1"
-            >
-              
-              {/* Main Headline - Menggunakan data dari homepageConfig */}
-              <h1 className="text-[62px] sm:text-[110px] md:text-[145px] lg:text-[170px] xl:text-[185px] font-black tracking-tighter uppercase leading-[0.8] text-white select-none">
-                {heroTitle}
-              </h1>
-            </motion.div>
+<div className="relative z-10 flex-1 flex items-end justify-center">
+  <div className="flex items-center space-x-3.5">
 
-            {/* Description & Detail - Menggunakan data dari homepageConfig */}
-            <motion.p
-              key={`hero-subtitle-${heroSubtitle}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xs sm:text-sm md:text-base text-white/80 max-w-md font-medium leading-relaxed"
-            >
-              {heroSubtitle}
-            </motion.p>
-          </div>
-          
-            {/* Right: CTA Button & Scroll Indicator */}
-            <div className="flex items-center space-x-3.5 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
-              {/* Large Pill CTA */}
-              <button
-                onClick={() => {
-                  setCurrentPage('katalog');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="bg-white hover:bg-zinc-100 text-[#1b4332] font-black px-6 py-3.5 sm:px-8 sm:py-4 rounded-full shadow-2xl hover:shadow-white/15 transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] flex items-center space-x-3 text-xs sm:text-sm tracking-widest uppercase cursor-pointer"
-              >
-                <span>Explore Equipment</span>
-                <ArrowRight className="h-4 w-4 text-[#1b4332]" />
-              </button>
+    {/* Large Pill CTA */}
+    <button
+      onClick={() => {
+        setCurrentPage('katalog');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+      className="bg-white hover:bg-zinc-100 text-[#1b4332] font-black px-6 py-3.5 sm:px-8 sm:py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-[1.04] flex items-center space-x-3 text-xs sm:text-sm tracking-widest uppercase"
+    >
+      <span>Lihat Perlengkapan</span>
+      <ArrowRight className="h-4 w-4" />
+    </button>
 
-              {/* Circular Scroll Button */}
-              <button
-                onClick={() => {
-                  const element = document.getElementById('home-features-section');
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="p-3.5 sm:p-4 rounded-full border border-white/20 text-white hover:bg-white/10 hover:border-white transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer shadow-lg flex items-center justify-center shrink-0"
-                title="Scroll Down"
-              >
-                <ChevronRight className="h-5 w-5 rotate-90" />
-              </button>
-            </div>
+    {/* Scroll */}
+    <button
+      onClick={() => {
+        const element = document.getElementById("home-status-section");
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }}
+      className="p-4 rounded-full border border-white/20 text-white hover:bg-white/10 transition-all duration-300"
+    >
+      <ChevronRight className="h-5 w-5 rotate-90" />
+    </button>
+
+  </div>
+</div>
+
+</section>
+</div>
+
+     {/* ================= INVENTORY STATUS SECTION (Premium glass cards) ================= */}
+<section 
+  className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" 
+  id="home-status-section"
+>
+  <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 sm:p-12 border border-gray-200/60 dark:border-zinc-800 shadow-sm relative overflow-hidden">
+
+    {/* Ambient vector lights */}
+    <div className="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+
+    <div className="space-y-8">
+
+      <h3 className="text-2xl sm:text-3xl font-bold text-[#1b4332]">
+        Status Ketersediaan Perlengkapan
+      </h3>
+
+      <div
+        className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        id="availability-cards-grid"
+      >
+
+        {/* Ready Card */}
+        <motion.div
+          style={getStatusColorStyle(currentConfig.statusColors.readyColor)}
+          className="p-5 rounded-2xl border flex flex-col justify-between h-36"
+          whileHover={{ y: -3 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase">
+              Tersedia
+            </span>
+
+            <span
+              style={getIndicatorDotStyle(currentConfig.statusColors.readyColor)}
+              className="h-2.5 w-2.5 rounded-full animate-pulse"
+            />
           </div>
-        </section>
+
+          <div>
+            <h4 className="text-base font-bold text-[#1b4332]">
+              Ready
+            </h4>
+
+            <p className="text-xs text-gray-500 mt-1">
+              Stok lengkap di basecamp, siap dikemas.
+            </p>
+          </div>
+        </motion.div>
+
+
+        {/* Rented Card */}
+        <motion.div
+          style={getStatusColorStyle(currentConfig.statusColors.disewaColor)}
+          className="p-5 rounded-2xl border flex flex-col justify-between h-36"
+          whileHover={{ y: -3 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase">
+              Dipinjam
+            </span>
+
+            <span
+              style={getIndicatorDotStyle(currentConfig.statusColors.disewaColor)}
+              className="h-2.5 w-2.5 rounded-full animate-pulse"
+            />
+          </div>
+
+          <div>
+            <h4 className="text-base font-bold text-amber-700">
+              Sedang Disewa
+            </h4>
+
+            <p className="text-xs text-gray-500 mt-1">
+              Sedang dibawa pelanggan.
+            </p>
+          </div>
+        </motion.div>
+
+
+        {/* Unavailable Card */}
+        <motion.div
+          style={getStatusColorStyle(currentConfig.statusColors.tidakTersediaColor)}
+          className="p-5 rounded-2xl border flex flex-col justify-between h-36"
+          whileHover={{ y: -3 }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase">
+              Dipesan
+            </span>
+
+            <span
+              style={getIndicatorDotStyle(currentConfig.statusColors.tidakTersediaColor)}
+              className="h-2.5 w-2.5 rounded-full animate-pulse"
+            />
+          </div>
+
+          <div>
+            <h4 className="text-base font-bold text-red-700">
+              Tidak Tersedia
+            </h4>
+
+            <p className="text-xs text-gray-500 mt-1">
+              Maintenance atau sedang tidak tersedia.
+            </p>
+          </div>
+        </motion.div>
+
       </div>
 
-      {/* ================= WHY CHOOSE US SECTION (Elegant Bento Grid Style) ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="home-features-section">
-        <div className="text-center space-y-3 max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-[#1b4332]/5 text-[#1b4332] dark:text-zinc-300 text-[10px] font-bold uppercase tracking-wider">
-            <span>Standar Layanan</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-sans font-bold text-[#1b4332] dark:text-white tracking-tight">
-            Komitmen Pelayanan Terbaik
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Kami menjaga seluruh ekosistem peralatan camping agar tetap bersih, steril, aman, dan mudah Anda gunakan kapan saja.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {currentConfig.features.map((feature, index) => (
-            <motion.div
-              key={feature.id}
-              className="group p-6 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200/50 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
-              id={`feature-card-${index}`}
-              whileHover={{ y: -4 }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-            >
-              {/* Soft decorative visual blob behind icons on hover */}
-              <div className="absolute -top-12 -right-12 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
-
-              <div className="h-10 w-10 rounded-xl bg-[#1b4332]/5 text-[#1b4332] dark:bg-zinc-800 dark:text-zinc-200 flex items-center justify-center mb-4 group-hover:bg-[#1b4332] group-hover:text-white transition-all duration-300">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <h3 className="font-sans font-bold text-sm sm:text-base text-gray-800 dark:text-white mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 leading-relaxed font-medium">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================= INVENTORY STATUS SECTION (Premium glass cards) ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="home-status-section">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 sm:p-12 border border-gray-200/60 dark:border-zinc-800 shadow-sm relative overflow-hidden">
-          {/* Ambient vector lights */}
-          <div className="absolute -top-24 -right-24 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
-            {/* Left intro copy */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-zinc-800 text-emerald-800 dark:text-secondary text-[10px] font-bold uppercase tracking-wider">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Sistem Stok Realtime</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-sans font-bold text-[#1b4332] dark:text-white tracking-tight leading-tight">
-                Status Ketersediaan Perlengkapan
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 leading-relaxed font-medium">
-                Kami berkomitmen menjaga transparansi informasi ketersediaan barang. Perhatikan tanda warna berikut saat Anda merencanakan pemesanan.
-              </p>
-            </div>
-
-            {/* Right 3 status cards - Menggunakan currentConfig */}
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-6" id="availability-cards-grid">
-              {/* Ready Card */}
-              <motion.div
-                style={getStatusColorStyle(currentConfig.statusColors.readyColor)}
-                className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
-                id="status-card-ready"
-                whileHover={{ y: -3 }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Tersedia</span>
-                  <span 
-                    style={getIndicatorDotStyle(currentConfig.statusColors.readyColor)}
-                    className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold font-sans text-[#1b4332] dark:text-white">Ready</h4>
-                  <p className="text-[10px] sm:text-xs opacity-75 mt-1 leading-normal font-medium text-gray-500 dark:text-zinc-400">
-                    Stok lengkap di basecamp, siap dikemas dan diambil langsung.
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Rented Card */}
-              <motion.div
-                style={getStatusColorStyle(currentConfig.statusColors.disewaColor)}
-                className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
-                id="status-card-rented"
-                whileHover={{ y: -3 }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Dipinjam</span>
-                  <span 
-                    style={getIndicatorDotStyle(currentConfig.statusColors.disewaColor)}
-                    className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold font-sans text-amber-700 dark:text-amber-500">Sedang Disewa</h4>
-                  <p className="text-[10px] sm:text-xs opacity-75 mt-1 leading-normal font-medium text-gray-500 dark:text-zinc-400">
-                    Sedang dibawa berpetualang. Hubungi admin untuk jadwal kembali.
-                  </p>
-                </div>
-              </motion.div>
-
-              {/* Unavailable Card */}
-              <motion.div
-                style={getStatusColorStyle(currentConfig.statusColors.tidakTersediaColor)}
-                className="p-5 rounded-2xl border flex flex-col justify-between h-36 transition-transform hover:scale-[1.02] duration-300"
-                id="status-card-unavailable"
-                whileHover={{ y: -3 }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold tracking-wider uppercase opacity-80">Dipesan</span>
-                  <span 
-                    style={getIndicatorDotStyle(currentConfig.statusColors.tidakTersediaColor)}
-                    className="h-2.5 w-2.5 rounded-full border border-white/40 animate-pulse"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold font-sans text-red-700 dark:text-red-400">Tidak Tersedia</h4>
-                  <p className="text-[10px] sm:text-xs opacity-75 mt-1 leading-normal font-medium text-gray-500 dark:text-zinc-400">
-                    Sedang maintenance/dibersihkan demi menjaga kualitas maksimal.
-                  </p>
-                </div>
-              </motion.div>
-
-            </div>
-
-          </div>
-        </div>
-      </section>
-
     </div>
-  );
+
+  </div>
+</section>
+
+</div>
+);
 }
