@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { HomepageConfig, SystemSettings } from '../types';
 import { motion } from 'motion/react';
-import heroBg from '../assets/images/BACKGROUND HERO.jpg';
+import heroBg from '../assets/images/BG HERO.jpg';
 
 interface HomeProps {
   homepageConfig: HomepageConfig;
@@ -364,8 +364,32 @@ z-50
             </motion.div>
           )}
 
-          <div className="relative z-10 flex-1 flex items-end justify-center pb-24">
-            <div className="flex items-center space-x-3.5">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
+
+  <h1
+    className="
+      text-5xl
+      sm:text-6xl
+      lg:text-7xl
+      xl:text-8xl
+      font-black
+      leading-[0.95]
+      tracking-tight
+      text-white
+      drop-shadow-[0_8px_30px_rgba(0,0,0,0.55)]
+      mb-12
+      max-w-5xl
+    "
+  >
+    PENYEWAAN GEAR OUTDOOR 
+    <br />
+    <span className="text-white/90">
+      CAMPING & HIKING
+    </span>
+  </h1>
+
+  <div className="flex items-center space-x-3.5">
+    
 
               {/* Large Pill CTA */}
               <button
