@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { HomepageConfig, SystemSettings } from '../types';
 import { motion } from 'motion/react';
-import heroBg from '../assets/images/BG HERO.jpg';
+import heroBg from '../assets/images/BG NEW HERO.jpg';
 
 interface HomeProps {
   homepageConfig: HomepageConfig;
