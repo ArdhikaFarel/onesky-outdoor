@@ -48,12 +48,6 @@ export default function Home({
     };
   };
 
-  // ==========================================
-  // HERO BANNER BACKGROUND IMAGE
-  // ==========================================
-  const heroBgImage =
-currentConfig.heroBgUrl || heroBg;
-
   return (
     <div className="space-y-24 pb-24 bg-[#faf9f6] dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 transition-colors duration-300 overflow-hidden" id="home-page">
       
@@ -63,13 +57,14 @@ currentConfig.heroBgUrl || heroBg;
 
       {/* ================= PREMIUM 100VH HERO SECTION ================= */}
       <div className="w-full min-h-screen p-4 sm:p-6 bg-[#faf9f6] dark:bg-zinc-950 flex flex-col justify-between" id="home-hero-section-wrapper">
-        <section 
-          className="relative h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] w-full rounded-[2.5rem] sm:rounded-[3rem] overflow-hidden flex flex-col justify-between p-6 sm:p-12 text-white shadow-2xl bg-cover bg-center bg-no-repeat"
-          style={{ 
-            backgroundImage: `url('${heroBgImage}')` 
-          }}
-          id="home-hero-section"
-        >
+        <section
+  style={{
+    backgroundImage: `url(${heroBg})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  }}
+>
           {/* Dark Overlay (40-60%) */}
           <div className="absolute inset-0 bg-black/45 pointer-events-none z-0" />
 

@@ -29,7 +29,6 @@ import {
   ReviewItem,
   DocumentationItem,
   SystemSettings,
-  HomepageConfig,
   ItemStatus
 } from '../types';
 
@@ -46,8 +45,6 @@ interface AdminDashboardProps {
   setDocumentation: React.Dispatch<React.SetStateAction<DocumentationItem[]>>;
   settings: SystemSettings;
   setSettings: React.Dispatch<React.SetStateAction<SystemSettings>>;
-  homepageConfig: HomepageConfig;
-  setHomepageConfig: React.Dispatch<React.SetStateAction<HomepageConfig>>;
   onLogout: () => void;
   onShowToast: (msg: string) => void;
 }
@@ -65,8 +62,6 @@ export default function AdminDashboard({
   setDocumentation,
   settings,
   setSettings,
-  homepageConfig,
-  setHomepageConfig,
   onLogout,
   onShowToast,
 }: AdminDashboardProps) {
@@ -77,7 +72,6 @@ export default function AdminDashboard({
     | 'status'
     | 'ulasan'
     | 'dokumentasi'
-    | 'homepage'
     | 'syarat'
     | 'settings'
   >('dashboard');
@@ -109,22 +103,6 @@ export default function AdminDashboard({
   const [termContent, setTermContent] = useState('');
   const [isTermFormOpen, setIsTermFormOpen] = useState(false);
 
-  // ==========================================
-  // HOMEPAGE CONFIG FORM - PERBAIKAN
-  // ==========================================
-  const [editHeroTitle, setEditHeroTitle] = useState(homepageConfig.heroTitle);
-  const [editHeroSub, setEditHeroSub] = useState(homepageConfig.heroSubtitle);
-  const [editHeroBg, setEditHeroBg] = useState(homepageConfig.heroBgUrl);
-  const [editHeroBgFile, setEditHeroBgFile] = useState<File | null>(null);
-  const [isHeroUploading, setIsHeroUploading] = useState(false);
-
-  // Sync state ketika homepageConfig berubah dari props
-  useEffect(() => {
-    setEditHeroTitle(homepageConfig.heroTitle);
-    setEditHeroSub(homepageConfig.heroSubtitle);
-    setEditHeroBg(homepageConfig.heroBgUrl);
-  }, [homepageConfig]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const heroFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -138,7 +116,6 @@ export default function AdminDashboard({
     { id: 'status', label: 'Kelola Status Barang', icon: CheckSquare },
     { id: 'ulasan', label: 'Kelola Ulasan', icon: MessageSquare },
     { id: 'dokumentasi', label: 'Kelola Dokumentasi', icon: ImageIcon },
-    { id: 'homepage', label: 'Kelola Homepage', icon: HomeIcon },
     { id: 'syarat', label: 'Kelola Syarat & Ketentuan', icon: BookOpen },
     { id: 'settings', label: 'Pengaturan Website', icon: SettingsIcon },
   ];
@@ -387,66 +364,6 @@ export default function AdminDashboard({
       setDocumentation((prev) => prev.filter((d) => d.id !== id));
       onShowToast('Foto dihapus.');
     }
-  };
-
-  // ==========================================
-  // 6. HOMEPAGE CONFIG OPERATIONS - PERBAIKAN
-  // ==========================================
-  const handleSaveHomepageConfig = () => {
-    // Set loading state
-    setIsHeroUploading(true);
-    
-    try {
-      // Jika ada file baru, proses upload ke Base64
-      let finalBgUrl = editHeroBg;
-      
-      // Update config dengan data baru
-      const updatedConfig = {
-        ...homepageConfig,
-        heroTitle: editHeroTitle,
-        heroSubtitle: editHeroSub,
-        heroBgUrl: finalBgUrl
-      };
-      
-      // Panggil setHomepageConfig dari parent (App.tsx)
-      setHomepageConfig(updatedConfig);
-      
-      // Reset file state
-      setEditHeroBgFile(null);
-      
-      onShowToast('✅ Konfigurasi homepage berhasil disimpan!');
-      console.log('🏠 Homepage config saved:', updatedConfig);
-    } catch (error) {
-      console.error('Error saving homepage config:', error);
-      onShowToast('❌ Gagal menyimpan konfigurasi homepage');
-    } finally {
-      setIsHeroUploading(false);
-    }
-  };
-
-  const handleFeatureTitleChange = (fId: string, nextTitle: string) => {
-    setHomepageConfig((prev) => ({
-      ...prev,
-      features: prev.features.map((f) => (f.id === fId ? { ...f, title: nextTitle } : f)),
-    }));
-  };
-
-  const handleFeatureDescChange = (fId: string, nextDesc: string) => {
-    setHomepageConfig((prev) => ({
-      ...prev,
-      features: prev.features.map((f) => (f.id === fId ? { ...f, description: nextDesc } : f)),
-    }));
-  };
-
-  const handleStatusColorChange = (key: 'readyColor' | 'disewaColor' | 'tidakTersediaColor', val: string) => {
-    setHomepageConfig((prev) => ({
-      ...prev,
-      statusColors: {
-        ...prev.statusColors,
-        [key]: val,
-      },
-    }));
-    onShowToast('Warna status ketersediaan diubah.');
   };
 
   // ==========================================
@@ -1161,186 +1078,6 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* ==================================================
-              TAB 7: LIVE HOMEPAGE EDITING - DIPERBAIKI
-              ================================================== */}
-          {activeTab === 'homepage' && (
-            <div className="space-y-8" id="panel-homepage-config">
-              <div>
-                <h1 className="text-3xl font-sans font-extrabold tracking-tight">Kelola Homepage</h1>
-                <p className="text-sm text-gray-500 dark:text-zinc-500">Ubah materi visual landing page seperti Judul Hero, Subtitle, Banner, serta warna status.</p>
-              </div>
-
-              {/* Hero Banner Form - DIPERBAIKI */}
-              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm space-y-6">
-                <h3 className="font-sans font-bold text-lg border-b pb-2">Bagian Hero Banner</h3>
-                
-                <div className="space-y-4 text-sm">
-                  {/* Preview Banner saat ini - DITAMBAHKAN */}
-                  <div className="space-y-2">
-                    <label className="block font-bold text-xs uppercase tracking-wide text-gray-400">Preview Banner Saat Ini</label>
-                    <div className="relative w-full h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800">
-                      {editHeroBg ? (
-                        <img 
-                          src={editHeroBg} 
-                          alt="Hero Banner Preview" 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback jika gambar gagal dimuat
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1920&q=85';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                          Belum ada gambar banner
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Hero Title */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-xs uppercase tracking-wide text-gray-400">Hero Main Title</label>
-                    <input
-                      type="text"
-                      value={editHeroTitle}
-                      onChange={(e) => setEditHeroTitle(e.target.value)}
-                      className="w-full px-3 py-2 border bg-gray-50 dark:bg-zinc-800 rounded-xl"
-                      placeholder="Masukkan judul utama hero"
-                    />
-                  </div>
-
-                  {/* Hero Subtitle */}
-                  <div className="space-y-1">
-                    <label className="font-bold text-xs uppercase tracking-wide text-gray-400">Hero Subtitle</label>
-                    <input
-                      type="text"
-                      value={editHeroSub}
-                      onChange={(e) => setEditHeroSub(e.target.value)}
-                      className="w-full px-3 py-2 border bg-gray-50 dark:bg-zinc-800 rounded-xl"
-                      placeholder="Masukkan subtitle hero"
-                    />
-                  </div>
-
-                  {/* Upload Gambar Baru - DIPERBAIKI */}
-                  <div className="space-y-2">
-                    <label className="block font-bold text-xs uppercase tracking-wide text-gray-400">Ganti Banner Background</label>
-                    <div className="flex items-center space-x-4 flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => heroFileInputRef.current?.click()}
-                        className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl font-semibold flex items-center space-x-1.5 transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span>Pilih Foto Background Baru</span>
-                      </button>
-                      <input
-                        type="file"
-                        ref={heroFileInputRef}
-                        accept="image/*"
-                        onChange={handleHeroImageUpload}
-                        className="hidden"
-                      />
-                      {editHeroBgFile && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                          ✅ {editHeroBgFile.name} siap diupload
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-gray-400 dark:text-zinc-500">
-                      Format: JPG, PNG, WEBP, GIF • Maksimal 1.5MB
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={handleSaveHomepageConfig}
-                    disabled={isHeroUploading}
-                    className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isHeroUploading ? '⏳ Menyimpan...' : '💾 Simpan Perubahan Hero'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Status Colors Config */}
-              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm space-y-6">
-                <h3 className="font-sans font-bold text-lg border-b pb-2 flex items-center space-x-1.5">
-                  <Palette className="h-5 w-5 text-secondary" />
-                  <span>Kustomisasi Warna Status Ketersediaan</span>
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
-                  {/* Ready Color */}
-                  <div className="space-y-2 p-4 border border-gray-100 dark:border-zinc-800 rounded-xl">
-                    <span className="font-bold text-xs text-gray-400 uppercase">Warna "Stok Ready"</span>
-                    <div className="flex items-center space-x-3 mt-1">
-                      <input
-                        type="color"
-                        value={homepageConfig.statusColors.readyColor}
-                        onChange={(e) => handleStatusColorChange('readyColor', e.target.value)}
-                        className="h-10 w-10 border border-zinc-300 rounded cursor-pointer"
-                      />
-                      <span className="font-mono font-bold">{homepageConfig.statusColors.readyColor}</span>
-                    </div>
-                  </div>
-
-                  {/* Disewa Color */}
-                  <div className="space-y-2 p-4 border border-gray-100 dark:border-zinc-800 rounded-xl">
-                    <span className="font-bold text-xs text-gray-400 uppercase">Warna "Sedang Disewa"</span>
-                    <div className="flex items-center space-x-3 mt-1">
-                      <input
-                        type="color"
-                        value={homepageConfig.statusColors.disewaColor}
-                        onChange={(e) => handleStatusColorChange('disewaColor', e.target.value)}
-                        className="h-10 w-10 border border-zinc-300 rounded cursor-pointer"
-                      />
-                      <span className="font-mono font-bold">{homepageConfig.statusColors.disewaColor}</span>
-                    </div>
-                  </div>
-
-                  {/* Tidak Tersedia Color */}
-                  <div className="space-y-2 p-4 border border-gray-100 dark:border-zinc-800 rounded-xl">
-                    <span className="font-bold text-xs text-gray-400 uppercase">Warna "Tidak Tersedia"</span>
-                    <div className="flex items-center space-x-3 mt-1">
-                      <input
-                        type="color"
-                        value={homepageConfig.statusColors.tidakTersediaColor}
-                        onChange={(e) => handleStatusColorChange('tidakTersediaColor', e.target.value)}
-                        className="h-10 w-10 border border-zinc-300 rounded cursor-pointer"
-                      />
-                      <span className="font-mono font-bold">{homepageConfig.statusColors.tidakTersediaColor}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mengapa Memilih kami Live edits */}
-              <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm space-y-6">
-                <h3 className="font-sans font-bold text-lg border-b pb-2">Bagian Informasi Keunggulan</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                  {homepageConfig.features.map((feature, idx) => (
-                    <div key={feature.id} className="p-4 border border-gray-100 dark:border-zinc-800 rounded-2xl space-y-3">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wide">Keunggulan #{idx + 1}</span>
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={feature.title}
-                          onChange={(e) => handleFeatureTitleChange(feature.id, e.target.value)}
-                          className="w-full px-2 py-1 bg-gray-50 dark:bg-zinc-800 border rounded font-bold"
-                        />
-                        <textarea
-                          rows={2}
-                          value={feature.description}
-                          onChange={(e) => handleFeatureDescChange(feature.id, e.target.value)}
-                          className="w-full px-2 py-1 bg-gray-50 dark:bg-zinc-800 border rounded text-xs"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* ==================================================
               TAB 8: TERMS & CONDITIONS CRUD (WITH REORDERING)
