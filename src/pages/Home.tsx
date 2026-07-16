@@ -49,15 +49,22 @@ export default function Home({
   };
 
   return (
-    <div className="space-y-24 pb-24 bg-[#faf9f6] dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 transition-colors duration-300 overflow-hidden" id="home-page">
+    <div
+  className="relative space-y-24 pb-24 bg-[#faf9f6] dark:bg-zinc-950 text-gray-800 dark:text-zinc-100 transition-colors duration-300"
+  id="home-page"
+>
       
       {/* Decorative background ambient blobs inspired by Behance Plant Shop */}
       <div className="absolute top-[110vh] left-1/4 w-[500px] h-[500px] bg-emerald-500/5 dark:bg-emerald-500/2 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-[150vh] right-10 w-[400px] h-[400px] bg-amber-500/5 dark:bg-amber-500/2 rounded-full blur-3xl pointer-events-none -z-10" />
 
       {/* ================= PREMIUM 100VH HERO SECTION ================= */}
-      <div className="w-full min-h-screen p-4 sm:p-6 bg-[#faf9f6] dark:bg-zinc-950 flex flex-col justify-between" id="home-hero-section-wrapper">
-        <section
+      <div
+  className="w-full p-4 sm:p-6 bg-[#faf9f6] dark:bg-zinc-950"
+  id="home-hero-section-wrapper"
+>
+       <section
+  className="relative min-h-screen flex flex-col overflow-hidden"
   style={{
     backgroundImage: `url(${heroBg})`,
     backgroundSize: "cover",
