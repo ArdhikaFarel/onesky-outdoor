@@ -381,7 +381,7 @@ z-50
       max-w-5xl
     "
   >
-    PENYEWAAN GEAR OUTDOOR 
+    PENYEWAAN GEAR
     <br />
     <span className="text-white/90">
       CAMPING & HIKING
