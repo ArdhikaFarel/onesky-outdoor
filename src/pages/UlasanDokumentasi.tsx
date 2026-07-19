@@ -35,6 +35,7 @@ export default function UlasanDokumentasi({
   const [docCaption, setDocCaption] = useState('');
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editingDocCaption, setEditingDocCaption] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Preview Modal States
@@ -100,31 +101,90 @@ export default function UlasanDokumentasi({
     setReviewComment('');
   };
 
-  // Handle Documentation File Upload
+  // ==========================================
+  // HANDLE DOCUMENTATION FILE UPLOAD - FIXED
+  // ==========================================
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check size (max 1.5MB for Base64 storage)
-    if (file.size > 1.5 * 1024 * 1024) {
-      alert('Ukuran gambar terlalu besar (Maksimal 1.5MB). Harap kompres atau gunakan gambar yang lebih kecil.');
+    if (!file) {
+      console.warn('No file selected');
       return;
     }
 
+    // Check size (max 1.5MB for Base64 storage)
+    if (file.size > 1.5 * 1024 * 1024) {
+      onShowToast('❌ Ukuran gambar terlalu besar (Maksimal 1.5MB). Harap kompres atau gunakan gambar yang lebih kecil.');
+      return;
+    }
+
+    // Validasi tipe file
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      onShowToast('❌ Format file tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF.');
+      return;
+    }
+
+    console.log('📤 Uploading file:', file.name, file.size, file.type);
+    setIsUploading(true);
+
     const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64Data = reader.result as string;
-      const newDoc: DocumentationItem = {
-        id: 'doc-' + Date.now(),
-        caption: docCaption.trim() || 'Momen seru bersama OneSky Outdoor',
-        imageUrl: base64Data,
-        date: new Date().toISOString().split('T')[0],
-      };
-      onAddDoc(newDoc);
-      onShowToast('Foto dokumentasi berhasil ditambahkan!');
-      setDocCaption('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    
+    reader.onload = (event) => {
+      try {
+        const base64Data = event.target?.result as string;
+        
+        if (!base64Data) {
+          throw new Error('Failed to read file');
+        }
+        
+        // Validasi Base64 tidak terlalu besar
+        if (base64Data.length > 1.2 * 1024 * 1024) {
+          onShowToast('❌ File terlalu besar setelah konversi. Silakan kompres gambar.');
+          setIsUploading(false);
+          return;
+        }
+        
+        console.log('✅ File read successfully, length:', base64Data.length);
+        
+        // Buat objek dokumentasi baru
+        const newDoc: DocumentationItem = {
+          id: 'doc-' + Date.now(),
+          caption: docCaption.trim() || 'Momen seru bersama OneSky Outdoor',
+          imageUrl: base64Data,
+          date: new Date().toISOString().split('T')[0],
+        };
+        
+        console.log('📝 Creating new documentation:', newDoc);
+        
+        // Panggil onAddDoc dari props
+        if (typeof onAddDoc === 'function') {
+          onAddDoc(newDoc);
+          onShowToast('✅ Foto dokumentasi berhasil ditambahkan!');
+        } else {
+          console.error('❌ onAddDoc is not a function');
+          onShowToast('❌ Gagal menambahkan dokumentasi.');
+        }
+        
+        // Reset form
+        setDocCaption('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        setIsUploading(false);
+        
+      } catch (error) {
+        console.error('❌ Error processing file:', error);
+        onShowToast('❌ Gagal memproses file. Silakan coba lagi.');
+        setIsUploading(false);
+      }
     };
+    
+    reader.onerror = (error) => {
+      console.error('❌ FileReader error:', error);
+      onShowToast('❌ Gagal membaca file. Silakan coba lagi.');
+      setIsUploading(false);
+    };
+    
     reader.readAsDataURL(file);
   };
 
@@ -348,11 +408,20 @@ export default function UlasanDokumentasi({
               {/* File Drop area */}
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border border-dashed border-gray-300 dark:border-zinc-800 rounded-lg p-4 text-center cursor-pointer hover:border-[#1b4332]/50 hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-all"
+                className={`border border-dashed border-gray-300 dark:border-zinc-800 rounded-lg p-4 text-center cursor-pointer hover:border-[#1b4332]/50 hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
               >
-                <Upload className="h-6 w-6 text-gray-400 mx-auto mb-1.5" />
-                <span className="block text-xs font-bold text-gray-700 dark:text-zinc-300">Pilih File Foto</span>
-                <span className="block text-[9px] text-gray-400 dark:text-zinc-500 mt-0.5">Maksimal 1.5MB (JPG/PNG)</span>
+                {isUploading ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <span className="block text-xs font-bold text-gray-700 dark:text-zinc-300">Mengupload...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-6 w-6 text-gray-400 mx-auto mb-1.5" />
+                    <span className="block text-xs font-bold text-gray-700 dark:text-zinc-300">Pilih File Foto</span>
+                    <span className="block text-[9px] text-gray-400 dark:text-zinc-500 mt-0.5">Maksimal 1.5MB (JPG/PNG)</span>
+                  </>
+                )}
                 
                 <input
                   type="file"
@@ -360,6 +429,7 @@ export default function UlasanDokumentasi({
                   onChange={handleFileChange}
                   accept="image/*"
                   className="hidden"
+                  disabled={isUploading}
                 />
               </div>
 
@@ -371,6 +441,7 @@ export default function UlasanDokumentasi({
                   value={docCaption}
                   onChange={(e) => setDocCaption(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary text-gray-800 dark:text-white"
+                  disabled={isUploading}
                 />
               </div>
             </div>
@@ -396,6 +467,10 @@ export default function UlasanDokumentasi({
                       alt={doc.caption}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // Fallback jika gambar gagal dimuat
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+                      }}
                     />
                     
                     {/* Dark overlay with Action Triggers */}

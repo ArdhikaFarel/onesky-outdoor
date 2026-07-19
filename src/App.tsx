@@ -422,31 +422,23 @@ export default function App() {
   // CRUD FUNCTIONS (Langsung ke Firestore)
   // ==========================================
   
-  // Packages CRUD - DIPERBAIKI
+  // Packages CRUD
   const handleSetPackages = useCallback((newPackages: RentalPackage[] | ((prev: RentalPackage[]) => RentalPackage[])) => {
     const updated = typeof newPackages === 'function' ? newPackages(packages) : newPackages;
-    
-    // Update state langsung
     setPackages(updated);
     
-    // Simpan ke Firestore untuk setiap perubahan
     if (isMigrationDone) {
-      // Cari package yang dihapus
       const deletedIds = packages.filter(p => !updated.some(up => up.id === p.id)).map(p => p.id);
-      
-      // Hapus dari Firestore
       deletedIds.forEach(id => {
         packageService.delete(id).catch(err => console.error('Error deleting package:', err));
       });
-      
-      // Update atau tambahkan package yang ada
       updated.forEach(pkg => {
         packageService.save(pkg).catch(err => console.error('Error saving package:', err));
       });
     }
   }, [packages, isMigrationDone]);
 
-  // Unit Prices CRUD - DIPERBAIKI
+  // Unit Prices CRUD
   const handleSetUnitPrices = useCallback((newPrices: UnitPriceItem[] | ((prev: UnitPriceItem[]) => UnitPriceItem[])) => {
     const updated = typeof newPrices === 'function' ? newPrices(unitPrices) : newPrices;
     setUnitPrices(updated);
@@ -456,14 +448,13 @@ export default function App() {
       deletedIds.forEach(id => {
         unitPriceService.delete(id).catch(err => console.error('Error deleting unit price:', err));
       });
-      
       updated.forEach(item => {
         unitPriceService.save(item).catch(err => console.error('Error saving unit price:', err));
       });
     }
   }, [unitPrices, isMigrationDone]);
 
-  // Terms CRUD - DIPERBAIKI
+  // Terms CRUD
   const handleSetTerms = useCallback((newTerms: TermItem[] | ((prev: TermItem[]) => TermItem[])) => {
     const updated = typeof newTerms === 'function' ? newTerms(terms) : newTerms;
     setTerms(updated);
@@ -473,14 +464,13 @@ export default function App() {
       deletedIds.forEach(id => {
         termService.delete(id).catch(err => console.error('Error deleting term:', err));
       });
-      
       updated.forEach(term => {
         termService.save(term).catch(err => console.error('Error saving term:', err));
       });
     }
   }, [terms, isMigrationDone]);
 
-  // Reviews CRUD - DIPERBAIKI
+  // Reviews CRUD
   const handleSetReviews = useCallback((newReviews: ReviewItem[] | ((prev: ReviewItem[]) => ReviewItem[])) => {
     const updated = typeof newReviews === 'function' ? newReviews(reviews) : newReviews;
     setReviews(updated);
@@ -490,31 +480,34 @@ export default function App() {
       deletedIds.forEach(id => {
         reviewService.delete(id).catch(err => console.error('Error deleting review:', err));
       });
-      
       updated.forEach(review => {
         reviewService.save(review).catch(err => console.error('Error saving review:', err));
       });
     }
   }, [reviews, isMigrationDone]);
 
-  // Documentation CRUD - DIPERBAIKI
+  // Documentation CRUD - FIXED
   const handleSetDocumentation = useCallback((newDocs: DocumentationItem[] | ((prev: DocumentationItem[]) => DocumentationItem[])) => {
     const updated = typeof newDocs === 'function' ? newDocs(documentation) : newDocs;
     setDocumentation(updated);
+    
+    // Simpan ke localStorage untuk fallback
+    localStorage.setItem('onesky_documentation', JSON.stringify(updated));
     
     if (isMigrationDone) {
       const deletedIds = documentation.filter(p => !updated.some(up => up.id === p.id)).map(p => p.id);
       deletedIds.forEach(id => {
         documentationService.delete(id).catch(err => console.error('Error deleting doc:', err));
       });
-      
       updated.forEach(doc => {
-        documentationService.save(doc).catch(err => console.error('Error saving doc:', err));
+        documentationService.save(doc)
+          .then(() => console.log(`✅ Doc ${doc.id} saved to Firestore`))
+          .catch(err => console.error(`❌ Error saving doc ${doc.id}:`, err));
       });
     }
   }, [documentation, isMigrationDone]);
 
-  // Settings CRUD - DIPERBAIKI
+  // Settings CRUD
   const handleSetSettings = useCallback((newSettings: SystemSettings | ((prev: SystemSettings) => SystemSettings)) => {
     const updated = typeof newSettings === 'function' ? newSettings(settings) : newSettings;
     setSettings(updated);
@@ -526,17 +519,14 @@ export default function App() {
     }
   }, [settings, isMigrationDone]);
 
-  // Homepage Config CRUD - DIPERBAIKI DENGAN TOAST FEEDBACK
+  // Homepage Config CRUD
   const handleSetHomepageConfig = useCallback((newConfig: HomepageConfig | ((prev: HomepageConfig) => HomepageConfig)) => {
     const updated = typeof newConfig === 'function' ? newConfig(homepageConfig) : newConfig;
     
     console.log('🏠 Updating homepage config:', updated);
     setHomepageConfig(updated);
-    
-    // Update localStorage untuk fallback
     localStorage.setItem('onesky_homepage', JSON.stringify(updated));
     
-    // Simpan ke Firestore
     if (isMigrationDone) {
       homepageService.save(updated)
         .then(() => {
@@ -551,7 +541,7 @@ export default function App() {
   }, [homepageConfig, isMigrationDone, triggerToast]);
 
   // ==========================================
-  // HITUNG TOTAL CART - PINDAHKAN KE SINI (SEBELUM renderPageContent)
+  // HITUNG TOTAL CART
   // ==========================================
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -599,42 +589,63 @@ export default function App() {
               const updated = [...reviews, newRev];
               setReviews(updated);
               if (isMigrationDone) {
-                reviewService.save(newRev).catch(err => console.error('Error saving review:', err));
+                reviewService.save(newRev)
+                  .then(() => console.log(`✅ Review ${newRev.id} saved`))
+                  .catch(err => console.error('Error saving review:', err));
               }
             }}
             onUpdateReview={(upRev) => {
               const updated = reviews.map((r) => (r.id === upRev.id ? upRev : r));
               setReviews(updated);
               if (isMigrationDone) {
-                reviewService.save(upRev).catch(err => console.error('Error updating review:', err));
+                reviewService.save(upRev)
+                  .then(() => console.log(`✅ Review ${upRev.id} updated`))
+                  .catch(err => console.error('Error updating review:', err));
               }
             }}
             onDeleteReview={(id) => {
               const updated = reviews.filter((r) => r.id !== id);
               setReviews(updated);
               if (isMigrationDone) {
-                reviewService.delete(id).catch(err => console.error('Error deleting review:', err));
+                reviewService.delete(id)
+                  .then(() => console.log(`✅ Review ${id} deleted`))
+                  .catch(err => console.error('Error deleting review:', err));
               }
             }}
             onAddDoc={(newDoc) => {
+              console.log('📝 Adding new doc:', newDoc);
               const updated = [...documentation, newDoc];
               setDocumentation(updated);
+              localStorage.setItem('onesky_documentation', JSON.stringify(updated));
+              
               if (isMigrationDone) {
-                documentationService.save(newDoc).catch(err => console.error('Error saving doc:', err));
+                documentationService.save(newDoc)
+                  .then(() => {
+                    console.log(`✅ Doc ${newDoc.id} saved to Firestore`);
+                    triggerToast('✅ Foto dokumentasi berhasil ditambahkan!');
+                  })
+                  .catch((err) => {
+                    console.error(`❌ Error saving doc ${newDoc.id}:`, err);
+                    triggerToast('❌ Gagal menyimpan dokumentasi ke server.');
+                  });
               }
             }}
             onUpdateDoc={(upDoc) => {
               const updated = documentation.map((d) => (d.id === upDoc.id ? upDoc : d));
               setDocumentation(updated);
               if (isMigrationDone) {
-                documentationService.save(upDoc).catch(err => console.error('Error updating doc:', err));
+                documentationService.save(upDoc)
+                  .then(() => console.log(`✅ Doc ${upDoc.id} updated`))
+                  .catch(err => console.error('Error updating doc:', err));
               }
             }}
             onDeleteDoc={(id) => {
               const updated = documentation.filter((d) => d.id !== id);
               setDocumentation(updated);
               if (isMigrationDone) {
-                documentationService.delete(id).catch(err => console.error('Error deleting doc:', err));
+                documentationService.delete(id)
+                  .then(() => console.log(`✅ Doc ${id} deleted`))
+                  .catch(err => console.error('Error deleting doc:', err));
               }
             }}
             onShowToast={triggerToast}
