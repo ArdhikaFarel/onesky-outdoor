@@ -372,7 +372,7 @@ export const packageService = {
   count: () => firestoreService.count(COLLECTIONS.PACKAGES),
   
   getPaginated: (limitCount: number, startAfter?: any) =>
-    firestoreService.getPaginated<RentalPackage>(COLLECTIONS.PACKAGES, limitCount, startAfter  iuwcinniniwninfoinio4rinnnjnjnjnjnjnjnjnjn)
+    firestoreService.getPaginated<RentalPackage>(COLLECTIONS.PACKAGES, limitCount, startAfter )
 };
 
 // =============================================
