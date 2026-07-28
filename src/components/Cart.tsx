@@ -112,13 +112,14 @@ export default function Cart({
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <img
-                      src={item.packageItem.imageUrl}
-                      alt={item.packageItem.name}
-                      className="w-16 h-16 object-cover rounded-xl shrink-0 border border-gray-100 dark:border-zinc-850"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="flex-1 min-w-0 pr-6 flex flex-col justify-between">
+                   {item.packageItem.type === "package" && (
+  <img
+    src={item.packageItem.imageUrl}
+    alt={item.packageItem.name}
+    className="w-16 h-16 object-cover rounded-xl shrink-0 border border-gray-100 dark:border-zinc-850"
+  />
+)}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
                         <h4 className="font-sans font-bold text-xs sm:text-sm text-gray-800 dark:text-white truncate">
                           {item.packageItem.name}

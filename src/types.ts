@@ -9,6 +9,7 @@ export interface RentalPackage {
   priceUnit: string;
   status: ItemStatus;
   imageUrl: string; // URL or Base64 string
+  type: "package" | "single";
 }
 
 export interface UnitPriceItem {
