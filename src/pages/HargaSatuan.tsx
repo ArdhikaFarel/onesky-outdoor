@@ -53,9 +53,9 @@ export default function HargaSatuan({ unitPrices, onAddToCart, onShowToast }: Ha
                 <span className="font-mono text-xs text-[#1b4332] dark:text-zinc-400 font-bold w-6 shrink-0">
                   {String(item.index).padStart(2, '0')}.
                 </span>
-                <span className="text-gray-800 dark:text-zinc-200 font-sans tracking-tight font-semibold truncate group-hover:text-[#1b4332] dark:group-hover:text-white transition-colors">
-                  {item.name}
-                </span>
+                <span className="text-gray-800 dark:text-zinc-200 font-sans tracking-tight font-semibold truncate uppercase group-hover:text-[#1b4332] dark:group-hover:text-white transition-colors">
+  {item.name}
+</span>
               </div>
               
               <div className="flex items-center space-x-3 shrink-0">
@@ -80,11 +80,11 @@ export default function HargaSatuan({ unitPrices, onAddToCart, onShowToast }: Ha
                     onAddToCart(pkgItem);
                     onShowToast(`Berhasil ditambahkan ke keranjang.`);
                   }}
-                  className="p-2 bg-[#1b4332] hover:bg-[#2d5a47] dark:bg-white dark:text-[#1b4332] dark:hover:bg-zinc-100 text-white rounded-full text-[10px] font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer shadow-sm active:scale-95 hover:scale-[1.05]"
+                  className="p-2 bg-amber-400 hover:bg-amber-500 dark:bg-amber-400 dark:hover:bg-amber-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer shadow-sm active:scale-95 hover:scale-[1.05]"
                   id={`add-unit-to-cart-btn-${item.id}`}
                   title="Tambah ke Keranjang"
                 >
-                  <ShoppingCart className="h-3.5 w-3.5" />
+                  <ShoppingCart className="h-3.5 w-3.5 text-white" />
                   <span className="hidden sm:inline font-bold">Sewa</span>
                 </button>
               </div>
