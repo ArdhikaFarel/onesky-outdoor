@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, ShoppingCart, ShieldAlert, Sun, Moon, Mountain } from 'lucide-react';
+import { Menu, X, ShoppingCart, ShieldAlert, Sun, Moon } from 'lucide-react';
 import { SystemSettings } from '../types';
 
 interface NavbarProps {
@@ -50,11 +50,8 @@ export default function Navbar({
             className="flex items-center space-x-2.5 cursor-pointer group"
             id="nav-logo-container"
           >
-            <div className="w-9 h-9 bg-[#1b4332] dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-[#1b4332] transition-transform group-hover:scale-105 duration-300 shadow-sm">
-              <Mountain className="h-5 w-5" />
-            </div>
             <span className="font-sans font-bold text-lg tracking-tight text-[#1b4332] dark:text-white group-hover:opacity-90 transition-opacity">
-              OneSky <span className="font-light text-emerald-700 dark:text-zinc-300">Outdoor</span>
+              Onesky <span className="font-light text-emerald-700 dark:text-zinc-300">Outdoor</span>
             </span>
           </div>
 

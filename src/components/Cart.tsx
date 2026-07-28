@@ -60,13 +60,13 @@ export default function Cart({
 
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <motion.div 
-          className="w-screen max-w-md bg-[#faf9f6] dark:bg-zinc-950 shadow-2xl flex flex-col h-full rounded-l-[2rem] border-l border-gray-100 dark:border-zinc-900 overflow-hidden"
+          className="w-screen max-w-md bg-white/30 dark:bg-zinc-900/30 backdrop-blur-xl shadow-2xl flex flex-col h-full rounded-l-[2rem] border-l border-white/20 overflow-hidden"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
         >
           {/* Header */}
-          <div className="px-6 py-5 bg-[#1b4332] text-white flex items-center justify-between">
+          <div className="px-6 py-5 bg-yellow-300/10 backdrop-blur-lg border-b border-yellow-200/20 text-white flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <ShoppingBag className="h-5 w-5 text-amber-400" />
               <h2 className="text-base font-sans font-bold tracking-tight">Keranjang Sewa Anda</h2>
