@@ -62,10 +62,10 @@ export default function Navbar({
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all duration-300 cursor-pointer ${
-                  currentPage === item.id
-                    ? 'bg-[#1b4332] text-white dark:bg-white dark:text-[#1b4332] shadow-sm'
-                    : 'text-gray-600 dark:text-zinc-400 hover:text-[#1b4332] dark:hover:text-white hover:bg-[#1b4332]/5 dark:hover:bg-white/5'
-                }`}
+  currentPage === item.id
+    ? 'text-[#EAB308] font-bold'
+    : 'text-gray-600 dark:text-zinc-400 hover:text-[#EAB308]'
+}`}
                 id={`nav-link-${item.id}`}
               >
                 {item.label}
